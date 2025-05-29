@@ -60,4 +60,55 @@
             <slot />
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#151f54] text-white border-t-4 border-[#212d6e]">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Company Info -->
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <img src="/favicon.png" alt="Logo" class="w-8 h-8" />
+                        <h3 class="text-xl font-bold">WiseOwl</h3>
+                    </div>
+                    <p class="text-gray-300 mb-4">Empowering students with quality education and comprehensive learning resources.</p>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact Us</h3>
+                    <div class="space-y-2 text-gray-300">
+                        <div class="flex items-center space-x-2">
+                            <Icon name="email" />
+                            <span>contact@wiseowl.edu</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <Icon name="phone" />
+                            <span>+1 (555) 123-4567</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <Icon name="location" />
+                            <span>123 Education St, Learning City, LC 12345</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <div class="space-y-2">
+                        <a href="/privacy" class="text-gray-300 hover:text-white transition-colors block">Privacy Policy</a>
+                        <a href="/terms" class="text-gray-300 hover:text-white transition-colors block">Terms of Service</a>
+                        <a href="/support" class="text-gray-300 hover:text-white transition-colors block">Support Center</a>
+                        <a href="/careers" class="text-gray-300 hover:text-white transition-colors block">Careers</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="border-t border-gray-600 mt-8 pt-6 text-center text-gray-300">
+                <p>&copy; 2025 WiseOwl. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </div>
