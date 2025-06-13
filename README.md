@@ -27,6 +27,12 @@ npm install
 
 ## 🚀 Running the Project
 You can start the development server with either of the following commands:
+``` bash
 npm run dev
+```
+
 OR
+
+``` bash
 vite dev
+```
