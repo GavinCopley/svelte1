@@ -28,6 +28,12 @@
 		"vite": "^6.2.6"
 	},
 	"dependencies": {
-		"@tailwindcss/vite": "^4.1.6"
+		"@lucia-auth/adapter-drizzle": "^1.1.0",
+		"@lucia-auth/oauth": "^3.5.3",
+		"@lucia-auth/sveltekit": "^0.6.11",
+		"@tailwindcss/vite": "^4.1.6",
+		"arctic": "^3.7.0",
+		"drizzle-orm": "^0.44.2",
+		"lucia": "^3.2.2"
 	}
 }
