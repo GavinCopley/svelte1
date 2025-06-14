@@ -22,98 +22,98 @@
   <h2 class="text-3xl font-bold text-[#151f54] text-center mb-12">Advanced Placement (AP) Classes</h2>
   <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
     <!-- AP STEM -->
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">🧪</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Chemistry</h3>
-      <p class="text-gray-600 text-sm mb-4">Master chemical reactions, thermodynamics, and molecular structures</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Dive into the world of atoms, reactions, and equations with personalized guidance from our Chemistry specialists who received 5s on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP Chemistry')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">⚛️</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Physics</h3>
-      <p class="text-gray-600 text-sm mb-4">Explore mechanics, electricity, magnetism, and modern physics</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Explore the laws that govern the universe from gravity to magnetism with constant support along the way</p>
       <button 
         on:click={() => selectSubject('AP Physics')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">🧬</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Biology</h3>
-      <p class="text-gray-600 text-sm mb-4">Study cellular processes, genetics, evolution, and ecology</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Journey through the science of life and get personalised assistance from one of our Biology experts who received 5s on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP Biology')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">💻</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Computer Science</h3>
-      <p class="text-gray-600 text-sm mb-4">Learn programming, algorithms, and software development</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Learn to code and investigate the world of computers with one of our many coders who earned 5s on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP Computer Science')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
     <!-- AP Humanities -->
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">📜</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP History</h3>
-      <p class="text-gray-600 text-sm mb-4">US History, World History, and European History</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Learn to write Document-Based questions, or how to study for future exams, with a past APUSH student who received a 5 on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP History')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">📝</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP English</h3>
-      <p class="text-gray-600 text-sm mb-4">Literature & Composition and Language & Composition</p>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP World History</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Journey through hundreds of years of history with a personal tutor who received a 5 on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP English')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">🌍</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Languages</h3>
-      <p class="text-gray-600 text-sm mb-4">Spanish, French, German, and more foreign languages</p>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP English Language</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Hone your rhetorical skills, build argumentation techniques, and prepare to analyze complex texts in order to get a 5 on the AP exam</p>
       <button 
         on:click={() => selectSubject('AP Languages')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">🎨</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Arts</h3>
-      <p class="text-gray-600 text-sm mb-4">Art History, Studio Art, and Music Theory</p>
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
+      <div class="text-3xl mb-4">📊</div>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Calculus AB</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Learn derivatives, integrals, and limits with step-by-step strategies that make even tough problems manageable with support from tutors who received 5s on their AP exams</p>
       <button 
         on:click={() => selectSubject('AP Arts')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
@@ -123,99 +123,51 @@
 
 <!-- Mathematics Section -->
 <div class="mb-16">
-  <h2 class="text-3xl font-bold text-[#151f54] text-center mb-12">Mathematics Classes</h2>
+  <h2 class="text-3xl font-bold text-[#151f54] text-center mb-12">Non-AP classes</h2>
   <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">📊</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Algebra I & II</h3>
-      <p class="text-gray-600 text-sm mb-4">Linear equations, quadratics, and polynomial functions</p>
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
+      <div class="text-3xl mb-4">🔢</div>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Integrated Math 1–3</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Solidify foundational math skills that will be used throughout calculus with one of our mathematics experts who received 5s on the AP calculus exams</p>
       <button 
         on:click={() => selectSubject('Algebra')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">📐</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Geometry</h3>
-      <p class="text-gray-600 text-sm mb-4">Shapes, proofs, area, volume, and spatial reasoning</p>
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
+      <div class="text-3xl mb-4">✏️</div>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Middle School English</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Grow as a reader and writer with engaging support in grammar, essays, and reading comprehension with tutors who received full scores on their AP exams</p>
       <button 
         on:click={() => selectSubject('Geometry')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">📈</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Pre-Calculus</h3>
-      <p class="text-gray-600 text-sm mb-4">Trigonometry, logarithms, and advanced functions</p>
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
+      <div class="text-3xl mb-4">🔬</div>
+      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Middle School Science</h3>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Discover the things that make the world work, and learn them from a top AP science student who received a 5 on the AP exam</p>
       <button 
         on:click={() => selectSubject('Pre-Calculus')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
     </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">∫</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Calculus</h3>
-      <p class="text-gray-600 text-sm mb-4">Derivatives, integrals, and advanced calculus concepts</p>
-      <button 
-        on:click={() => selectSubject('AP Calculus')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
-      >
-        Find Tutors
-      </button>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">📉</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">AP Statistics</h3>
-      <p class="text-gray-600 text-sm mb-4">Data analysis, probability, and statistical inference</p>
-      <button 
-        on:click={() => selectSubject('AP Statistics')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
-      >
-        Find Tutors
-      </button>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">🔢</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Discrete Math</h3>
-      <p class="text-gray-600 text-sm mb-4">Logic, set theory, combinatorics, and graph theory</p>
-      <button 
-        on:click={() => selectSubject('Discrete Math')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
-      >
-        Find Tutors
-      </button>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
-      <div class="text-3xl mb-4">🔤</div>
-      <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Linear Algebra</h3>
-      <p class="text-gray-600 text-sm mb-4">Matrices, vectors, and linear transformations</p>
-      <button 
-        on:click={() => selectSubject('Linear Algebra')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
-      >
-        Find Tutors
-      </button>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors">
+    <div class="bg-white shadow-lg rounded-2xl p-6 text-center border-2 border-gray-200 hover:border-[#151f54] transition-colors flex flex-col h-full">
       <div class="text-3xl mb-4">➕</div>
       <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Basic Math</h3>
-      <p class="text-gray-600 text-sm mb-4">Arithmetic, fractions, decimals, and percentages</p>
+      <p class="text-gray-600 text-sm mb-4 flex-grow">Arithmetic, fractions, decimals, and percentages</p>
       <button 
         on:click={() => selectSubject('Basic Math')}
-        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold"
+        class="w-full bg-[#151f54] text-white px-4 py-2 rounded-lg hover:bg-[#0f1a3f] transition-colors text-sm font-semibold mt-auto"
       >
         Find Tutors
       </button>
