@@ -15,12 +15,13 @@
   <div class="bg-white shadow-md rounded-2xl p-6 flex flex-col justify-center">
     <h3 class="text-2xl font-semibold text-[#151f54] mb-4">Our Mission</h3>
     <p class="text-gray-700 text-lg leading-relaxed">
-      We’re a team of passionate educators and developers who created WiseOwl to help students
-      thrive in their academic journey. Our goal is to provide powerful, simple tools that
+      We’re a team of passionate students who created WiseOwl Tutoring in order to help students
+      thrive in their academic journey regardless of where you're at in
+      your learning journey. Our goal is to provide powerful, simple tools that
       make organizing, learning, and succeeding more accessible for everyone.
     </p>
     <p class="text-gray-700 text-lg mt-4 leading-relaxed">
-      Founded by lifelong learners, WiseOwl is driven by the belief that technology can bridge
+      Founded by lifelong learners, WiseOwl is driven by the belief that the proper tutoring can bridge
       the gap between potential and success. Whether you're a student, teacher, or lifelong learner,
       we're here to support your path forward.
     </p>
