@@ -21,8 +21,8 @@
       make organizing, learning, and succeeding more accessible for everyone.
     </p>
     <p class="text-gray-700 text-lg mt-4 leading-relaxed">
-      Founded by lifelong learners, WiseOwl is driven by the belief that the proper tutoring can bridge
-      the gap between potential and success. Whether you're a student, teacher, or lifelong learner,
+      Founded by lifelong learners, WiseOwl is driven by the belief that proper tutoring can bridge
+      the gap between potential and success. Whether you're just learning math concepts or taking AP courses,
       we're here to support your path forward.
     </p>
   </div>

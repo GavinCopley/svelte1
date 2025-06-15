@@ -58,27 +58,28 @@
   </div>
 </div>
 
-<!-- Stats Section -->
+<!-- Stats Section (Clean One-Line Version) -->
 <div class="bg-gradient-to-r from-[#151f54] to-[#0f1a3f] rounded-2xl p-8 mb-16 text-white">
   <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
     <div>
-      <div class="text-3xl font-bold mb-2">10,000+</div>
-      <div class="text-lg">Happy Students</div>
+      <div class="text-3xl font-bold mb-2">100%</div>
+      <div class="text-lg whitespace-nowrap">Tutors scored 4–5 on APs</div>
     </div>
     <div>
-      <div class="text-3xl font-bold mb-2">500+</div>
-      <div class="text-lg">Expert Tutors</div>
+      <div class="text-3xl font-bold mb-2">10+</div>
+      <div class="text-lg whitespace-nowrap">Subjects available</div>
     </div>
     <div>
-      <div class="text-3xl font-bold mb-2">50+</div>
-      <div class="text-lg">Subjects Covered</div>
+      <div class="text-3xl font-bold mb-2">100%</div>
+      <div class="text-lg whitespace-nowrap">Parent trial satisfaction</div>
     </div>
     <div>
-      <div class="text-3xl font-bold mb-2">98%</div>
-      <div class="text-lg">Success Rate</div>
+      <div class="text-3xl font-bold mb-2">7 Days</div>
+      <div class="text-lg whitespace-nowrap">Weekly availability</div>
     </div>
   </div>
 </div>
+
 
 <!-- How It Works Section -->
 <div class="mb-16">
