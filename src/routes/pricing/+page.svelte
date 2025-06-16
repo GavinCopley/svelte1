@@ -14,6 +14,7 @@
   <h1 class="text-5xl font-bold text-[#151f54] mb-6">Choose Your Learning Plan</h1>
   <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
     Flexible pricing options designed to fit your learning needs and budget. All plans include access to our expert tutors and comprehensive learning resources.
+    If you're not completely satisfied with your first session, we'll refund your payment in full.
   </p>
 </div>
 
