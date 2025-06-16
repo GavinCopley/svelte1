@@ -6,13 +6,14 @@
 
 	// let value = $state<CalendarDate | undefined>(new CalendarDate(2025, 6, 12));
 	let value = $state<CalendarDate | undefined>(undefined);
-	let selectedTime = $state<string | null>("10:00");
+	// let selectedTime = $state<string | null>("10:00");
+	let selectedTime = $state<string | null>(null);
 
 	// const bookedDates = Array.from({ length: 3 }, (_, i) => new CalendarDate(2025, 6, 17 + i));
 	const bookedDates: CalendarDate[] = [];
-	const timeSlots = Array.from({ length: 37 }, (_, i) => {
-		const totalMinutes = i * 15;
-		const hour = Math.floor(totalMinutes / 60) + 9;
+	const timeSlots = Array.from({ length: 9 }, (_, i) => {
+		const totalMinutes = i * 30;
+		const hour = Math.floor(totalMinutes / 60) + 16;
 		const minute = totalMinutes % 60;
 		return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 	});
