@@ -31,7 +31,7 @@
 			/>
 		</div>
 		<div
-			class="no-scrollbar inset-y-0 right-0 flex max-h-72 w-full scroll-pb-6 flex-col gap-4 overflow-y-auto border-t p-6 md:absolute md:max-h-none md:w-48 md:border-l md:border-t-0"
+			class="no-scrollbar inset-y-0 right-0 flex w-full scroll-pb-6 flex-col gap-4 border-t p-6 md:absolute md:w-48 md:border-l md:border-t-0"
 		>
 			<div class="grid gap-2">
 				{#each timeSlots as time (time)}
