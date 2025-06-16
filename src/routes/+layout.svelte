@@ -43,6 +43,7 @@
                       <button on:click={() => goto("/login")}>Login</button>
                       <span class="text-white text-lg ml-2">johanhardcodething</span>
                       <button on:click={() => console.log("logging out")}>Logout</button>
+                      </div>
                   </div>
               </div>
 
