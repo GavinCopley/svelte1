@@ -3,6 +3,7 @@
 	import * as Card from "$lib/components/ui/card/index.js";
 	import Calendar from "$lib/components/ui/calendar/calendar.svelte";
 	import { CalendarDate, type DateValue, getLocalTimeZone, today } from "@internationalized/date";
+	import { goto } from "$app/navigation"; // Import navigation function
 
 	// let value = $state<CalendarDate | undefined>(new CalendarDate(2025, 6, 12));
 	let value = $state<CalendarDate | undefined>(undefined);
@@ -25,6 +26,30 @@
 		const minute = totalMinutes % 60;
 		return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 	});
+
+	// Function that will be executed when the continue button is clicked
+	function handleBookingSubmit() {
+		if (value && selectedTime) {
+			const formattedDate = value.toDate(getLocalTimeZone()).toLocaleDateString("en-US", {
+				weekday: "long",
+				day: "numeric",
+				month: "short",
+			});
+			
+			// Log the booking information
+			console.log(`Booking confirmed: ${formattedDate} at ${selectedTime}`);
+			
+			// Show confirmation to user
+			alert(`Your tutoring session has been scheduled for ${formattedDate} at ${selectedTime}. You will receive a confirmation email shortly.`);
+			
+			// You could redirect to a confirmation page
+			goto('/booking/confirmation');
+			
+			// Or reset the form
+			// value = undefined;
+			// selectedTime = null;
+		}
+	}
 </script>
 
 <Card.Root class="gap-0 p-0">
@@ -75,6 +100,7 @@
 			disabled={!value || !selectedTime}
 			class="w-full md:ml-auto md:w-auto"
 			variant="outline"
+			onclick={handleBookingSubmit}
 		>
 			Continue
 		</Button>
