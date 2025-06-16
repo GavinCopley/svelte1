@@ -2,12 +2,20 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import * as Card from "$lib/components/ui/card/index.js";
 	import Calendar from "$lib/components/ui/calendar/calendar.svelte";
-	import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
+	import { CalendarDate, type DateValue, getLocalTimeZone, today } from "@internationalized/date";
 
 	// let value = $state<CalendarDate | undefined>(new CalendarDate(2025, 6, 12));
 	let value = $state<CalendarDate | undefined>(undefined);
 	// let selectedTime = $state<string | null>("10:00");
 	let selectedTime = $state<string | null>(null);
+
+	// Get the current date to compare for disabling previous months
+	const currentDate = today(getLocalTimeZone());
+
+	// Function to determine if a date is in the past
+	function isDateInPast(date: DateValue) {
+		return date.compare(currentDate) < 0;
+	}
 
 	// const bookedDates = Array.from({ length: 3 }, (_, i) => new CalendarDate(2025, 6, 17 + i));
 	const bookedDates: CalendarDate[] = [];
@@ -25,7 +33,8 @@
 			<Calendar
 				type="single"
 				bind:value
-				isDateUnavailable={(date) => bookedDates.some((d) => d.compare(date) === 0)}
+				isDateUnavailable={(date) => bookedDates.some((d) => d.compare(date) === 0) || isDateInPast(date)}
+				minValue={currentDate}
 				class="data-unavailable:line-through data-unavailable:opacity-100 bg-transparent p-0 [--cell-size:--spacing(10)] md:[--cell-size:--spacing(12)]"
 				weekdayFormat="short"
 			/>
