@@ -1,6 +1,7 @@
 <script>
     import "../app.css";
     import Icon from '$lib/components/Icon.svelte';
+    import { goto } from "$app/navigation";
 </script>
 
 <!-- Layout structure -->
@@ -37,11 +38,12 @@
 
                 <!-- Settings/Profile -->
                 <div class="flex items-center space-x-4">
-                    <a href="/settings" 
-                       class="font-semibold bg-[#293da6] hover:bg-[#212d6e] rounded px-4 py-2 text-lg flex items-center space-x-2 text-white border-2 border-[#212d6e] transition-colors">
-                        <Icon name="settings" />
-                        <span>Settings</span>
-                    </a>
+                    <div class="navbar max-w-3xl mx-auto justify-between">
+                       <div>
+                        <button on:click={() => goto("/login")}>Login</button>
+                        <span class="text-white text-lg ml-2">johanhardcodething</span>
+                        <button on:click={() => console.log("logging out")}>Logout</button>
+                    </div>
                 </div>
 
                 <!-- Mobile Menu Button (for future mobile implementation) -->
