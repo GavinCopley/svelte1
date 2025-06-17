@@ -102,7 +102,7 @@
                 </p>
             </div>
             <div class="flex justify-center mb-12">
-                <div style="transform: scale(1.2) !important;">
+                <div class="calendar" style="transform: scale(1.2) !important;">
                     {#if selectedPlan}
                         <Calendar planData={selectedPlan} />
                     {/if}
@@ -111,7 +111,7 @@
             <div class="text-center mt-6">
                 <button 
                     on:click={() => currentStep = 0}
-                    class="border-2 border-[#151f54] text-[#151f54] px-6 py-3 rounded-lg hover:bg-[#151f54] hover:text-white transition-colors font-semibold"
+                    class="back-button border-2 border-[#151f54] text-[#151f54] px-6 py-3 rounded-lg hover:bg-[#151f54] hover:text-white transition-colors font-semibold"
                 >
                     Back to Plan Selection
                 </button>
@@ -119,3 +119,13 @@
         </div>
     {/if}
 </div>
+
+<style>
+    .calendar {
+        margin-top: 2rem; /* Increase this value to move it lower */
+    }
+
+    .back-button {
+        margin-top: 2rem; /* Increase this value to move it lower */
+    }
+</style>
