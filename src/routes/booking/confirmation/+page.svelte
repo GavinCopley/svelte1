@@ -1,9 +1,24 @@
 <script lang="ts">
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
+  // Define interface for booking data
+  interface BookingData {
+    date?: string;
+    time?: string;
+    // Add other potential properties here
+  }
+
+  // Parse booking data from URL parameters
+  let bookingData: BookingData = {};
+  $: if ($page.url.searchParams.has('data')) {
+    bookingData = JSON.parse($page.url.searchParams.get('data') || '{}');
+  }
+  
   function viewAllBookings() {
     // Navigate to bookings page
     console.log('Navigating to all bookings');
-    // Replace with actual navigation code, e.g.:
-    // goto('/bookings');
+    goto('/bookings');
   }
 </script>
 
@@ -24,7 +39,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div>
         <p class="text-gray-500 text-sm">Date of Tutoring</p>
-        <p class="text-gray-700 font-medium">(date)</p>
+        <p class="text-gray-700 font-medium">{bookingData?.date || '(No date selected)'}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-sm">Time</p>
+        <p class="text-gray-700 font-medium">{bookingData?.time || '(No time selected)'}</p>
       </div>
       <div>
         <p class="text-gray-500 text-sm">Payment</p>

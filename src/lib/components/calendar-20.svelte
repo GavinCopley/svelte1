@@ -42,12 +42,14 @@
 			// Show confirmation to user
 			alert(`Your tutoring session has been scheduled for ${formattedDate} at ${selectedTime}. You will receive a confirmation email shortly.`);
 			
-			// You could redirect to a confirmation page
-			goto('/booking/confirmation');
-			
-			// Or reset the form
-			// value = undefined;
-			// selectedTime = null;
+			// Create booking data object and pass via URL
+			const bookingData = { 
+				date: formattedDate, 
+				time: selectedTime,
+				isoDate: value.toString()
+			};
+			const params = new URLSearchParams({ data: JSON.stringify(bookingData) });
+			goto(`/booking/confirmation?${params}`);
 		}
 	}
 </script>
