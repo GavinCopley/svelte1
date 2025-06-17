@@ -21,10 +21,12 @@
 	// const bookedDates = Array.from({ length: 3 }, (_, i) => new CalendarDate(2025, 6, 17 + i));
 	const bookedDates: CalendarDate[] = [];
 	const timeSlots = Array.from({ length: 9 }, (_, i) => {
-		const totalMinutes = i * 30;
-		const hour = Math.floor(totalMinutes / 60) + 16;
-		const minute = totalMinutes % 60;
-		return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+    const totalMinutes = i * 30;
+    const hour24 = Math.floor(totalMinutes / 60) + 16;
+    const minute = totalMinutes % 60;
+    const period = hour24 >= 12 ? "pm" : "am";
+    const hour12 = hour24 % 12 || 12; // Convert 0 to 12 for 12am
+    return `${hour12}:${minute.toString().padStart(2, "0")}${period}`;
 	});
 
 	// Function that will be executed when the continue button is clicked
