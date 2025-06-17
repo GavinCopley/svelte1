@@ -31,7 +31,6 @@
 
 <!-- Hero Section -->
 <div class="text-center mb-12 pt-16">
-  <div class="text-6xl mb-8 text-center">✅</div>
   <h1 class="text-5xl font-bold text-[#151f54] mb-6">Thank You For Your Booking!</h1>
   <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
     Your tutoring session has been confirmed. We've sent a confirmation email with all the details.
