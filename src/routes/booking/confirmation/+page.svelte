@@ -6,6 +6,8 @@
   interface BookingData {
     date?: string;
     time?: string;
+    plan?: string;
+    price?: string;
     // Add other potential properties here
   }
 
@@ -19,6 +21,11 @@
     // Navigate to bookings page
     console.log('Navigating to all bookings');
     goto('/bookings');
+  }
+
+  function bookNewSession() {
+    // Navigate back to booking page to start a new booking
+    goto('/booking');
   }
 </script>
 
@@ -38,6 +45,14 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div>
+        <p class="text-gray-500 text-sm">Tutoring Plan</p>
+        <p class="text-gray-700 font-medium">{bookingData?.plan || 'Standard'} Plan</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-sm">Rate</p>
+        <p class="text-gray-700 font-medium">{bookingData?.price || 'Standard pricing'}</p>
+      </div>
+      <div>
         <p class="text-gray-500 text-sm">Date of Tutoring</p>
         <p class="text-gray-700 font-medium">{bookingData?.date || '(No date selected)'}</p>
       </div>
@@ -46,17 +61,23 @@
         <p class="text-gray-700 font-medium">{bookingData?.time || '(No time selected)'}</p>
       </div>
       <div>
-        <p class="text-gray-500 text-sm">Payment</p>
+        <p class="text-gray-500 text-sm">Payment Method</p>
         <p class="text-gray-700 font-medium">Cash</p>
       </div>
     </div>
     
-    <div class="text-center">
+    <div class="flex flex-col md:flex-row gap-4 justify-center">
       <button 
         on:click={viewAllBookings}
-        class="bg-[#151f54] text-white px-8 py-4 rounded-lg hover:bg-[#0f1a3f] transition-colors text-lg font-medium w-full md:w-auto"
+        class="bg-[#151f54] text-white px-8 py-4 rounded-lg hover:bg-[#0f1a3f] transition-colors text-lg font-medium"
       >
         View All My Bookings
+      </button>
+      <button 
+        on:click={bookNewSession}
+        class="border-2 border-[#151f54] text-[#151f54] px-8 py-4 rounded-lg hover:bg-[#151f54] hover:text-white transition-colors text-lg font-medium"
+      >
+        Book Another Session
       </button>
     </div>
   </div>
