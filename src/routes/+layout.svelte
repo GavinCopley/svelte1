@@ -58,7 +58,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="py-8 px-6 bg-[#f5f7ff] min-h-screen">
+  <main class="py-8 px-6 bg-amber-5 min-h-screen">
       <div class="container mx-auto max-w-6xl">
           <slot />
       </div>
