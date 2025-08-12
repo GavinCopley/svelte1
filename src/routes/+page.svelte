@@ -1,128 +1,136 @@
-<script lang="ts">
-  function openContactForm() {
-    window.open('', '_blank');
+<script>
+  import { onMount } from 'svelte';
+  import { Button } from "$lib/components/ui/button";
+  import { fade } from 'svelte/transition';
+
+  let visible = false;
+  let showInitialContent = true;
+  let showNewContent = false;
+
+  function handleGetStarted() {
+    // First fade out the initial content
+    showInitialContent = false;
+    
+    // After initial content fades out, show the new content
+    setTimeout(() => {
+      showNewContent = true;
+    }, 700); // Match the duration of the fade-out transition
   }
-  
-  function startTutoring() {
-    // Navigate to tutoring page or open scheduling
-    console.log('Starting tutoring session...');
-  }
-  
-  function browseSubjects() {
-    // Navigate to subjects page
-    window.location.href = '/subjects';
-    console.log('Browsing subjects...');
-  }
+
+  onMount(() => {
+    visible = true;
+  });
 </script>
 
-<!-- Hero Section -->
-<div class="text-center mb-12">
-  <h1 class="text-5xl font-bold text-[#151f54] mb-6">Welcome to WiseOwl Tutoring</h1>
-  <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-    Unlock your potential with personalized one-on-one tutoring. Expert tutors ready to help you succeed in any subject, anytime, anywhere.
-  </p>
-  <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <button 
-      on:click={startTutoring}
-      class="bg-[#151f54] text-white px-8 py-4 rounded-lg hover:bg-[#0f1a3f] transition-colors text-lg font-semibold"
+<div class="flex flex-col items-center justify-center p-4 text-slate-900 min-h-[calc(100vh-4rem)]">
+  {#if showInitialContent}
+    <div 
+      class="container mx-auto flex max-w-3xl flex-col items-center justify-center space-y-8 text-center transition-all duration-700 ease-in-out {visible ? 'opacity-100' : 'opacity-0 translate-y-4'}"
+      out:fade={{ duration: 700 }}
     >
-      Start Learning Now
-    </button>
-    <button 
-      on:click={browseSubjects}
-      class="border-2 border-[#151f54] text-[#151f54] px-8 py-4 rounded-lg hover:bg-[#151f54] hover:text-white transition-colors text-lg font-semibold"
-    >
-      Browse Subjects
-    </button>
-  </div>
-</div>
-
-<!-- Features Grid -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-  <div class="bg-white shadow-lg rounded-2xl p-8 text-center">
-    <div class="text-4xl mb-4">🎓</div>
-    <h3 class="text-xl font-semibold mb-3 text-[#151f54]">Expert Tutors</h3>
-    <p class="text-gray-600">Connect with qualified tutors who are passionate about helping you achieve your academic goals.</p>
-  </div>
-  
-  <div class="bg-white shadow-lg rounded-2xl p-8 text-center">
-    <div class="text-4xl mb-4">📚</div>
-    <h3 class="text-xl font-semibold mb-3 text-[#151f54]">All Subjects</h3>
-    <p class="text-gray-600">From mathematics and science to languages and humanities - we cover every subject you need.</p>
-  </div>
-  
-  <div class="bg-white shadow-lg rounded-2xl p-8 text-center">
-    <div class="text-4xl mb-4">🕐</div>
-    <h3 class="text-xl font-semibold mb-3 text-[#151f54]">Flexible Schedule</h3>
-    <p class="text-gray-600">Learn at your own pace with flexible scheduling that fits your busy lifestyle.</p>
-  </div>
-</div>
-
-<!-- Stats Section (Clean One-Line Version) -->
-<div class="bg-gradient-to-r from-[#151f54] to-[#0f1a3f] rounded-2xl p-8 mb-16 text-white">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-    <div>
-      <div class="text-3xl font-bold mb-2">100%</div>
-      <div class="text-lg whitespace-nowrap">Tutors scored 4–5 on APs</div>
-    </div>
-    <div>
-      <div class="text-3xl font-bold mb-2">10+</div>
-      <div class="text-lg whitespace-nowrap">Subjects available</div>
-    </div>
-    <div>
-      <div class="text-3xl font-bold mb-2">100%</div>
-      <div class="text-lg whitespace-nowrap">Parent trial satisfaction</div>
-    </div>
-    <div>
-      <div class="text-3xl font-bold mb-2">7 Days</div>
-      <div class="text-lg whitespace-nowrap">Weekly availability</div>
-    </div>
-  </div>
-</div>
-
-
-<!-- How It Works Section -->
-<div class="mb-16">
-  <h2 class="text-3xl font-bold text-[#151f54] text-center mb-12">How It Works</h2>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="text-center">
-      <div class="bg-[#151f54] text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
-      <h3 class="text-xl font-semibold mb-3 text-[#151f54]">Choose Your Subject</h3>
-      <p class="text-gray-600">Select from our wide range of subjects and find the perfect tutor for your needs.</p>
-    </div>
-    <div class="text-center">
-      <div class="bg-[#151f54] text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
-      <h3 class="text-xl font-semibold mb-3 text-[#151f54]">Schedule Your Session</h3>
-      <p class="text-gray-600">Book a convenient time that works for your schedule - day or night.</p>
-    </div>
-    <div class="text-center">
-      <div class="bg-[#151f54] text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
-      <h3 class="text-xl font-semibold mb-3 text-[#151f54]">Start Learning</h3>
-      <p class="text-gray-600">Connect with your tutor and begin your personalized learning journey.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Contact Us Card -->
-<div class="flex justify-center">
-  <div class="bg-white shadow-lg rounded-2xl p-8 max-w-2xl w-full">
-    <h3 class="text-2xl font-semibold mb-4 text-[#151f54] text-center">Ready to Get Started?</h3>
-    <p class="text-gray-600 mb-6 text-center text-lg">Have questions about our tutoring services? We're here to help you succeed!</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-      <div class="text-center">
-        <p class="text-gray-600 text-lg">📧 hello@wiseowl.com</p>
+      <!-- Logo/Icon -->
+      <div class="mb-2">
+        <img src="/favicon.png" alt="WiseOwl Tutoring Logo" width="120" height="120" class="mx-auto" />
       </div>
-      <div class="text-center">
-        <p class="text-gray-600 text-lg">📞 (555) 123-WISE</p>
+
+      <!-- Title with subtle animation -->
+      <h1 class="text-5xl font-extrabold tracking-tight leading-tight sm:text-6xl md:text-7xl">
+        <span class="inline-block animate-fade-in-up opacity-0 text-slate-900" style="animation-delay: 200ms; animation-fill-mode: forwards;">Welcome to</span>
+        <br />
+        <span class="inline-block animate-fade-in-up bg-gradient-to-r from-[#151f54] to-[#5564ab] bg-clip-text text-transparent opacity-0 pb-2" style="animation-delay: 400ms; animation-fill-mode: forwards;">
+          WiseOwl Tutoring
+        </span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="max-w-lg text-xl font-medium text-slate-900 animate-fade-in-up opacity-0" style="animation-delay: 600ms; animation-fill-mode: forwards;">
+        Empowering students to achieve academic excellence through personalized learning experiences
+      </p>
+
+      <!-- Get Started Button -->
+      <div class="pt-6 animate-fade-in-up opacity-0" style="animation-delay: 800ms; animation-fill-mode: forwards;">
+        <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" on:click={handleGetStarted}>
+          Get Started
+        </Button>
       </div>
     </div>
-    <div class="text-center">
-      <button 
-        on:click={openContactForm}
-        class="bg-[#151f54] text-white px-8 py-3 rounded-lg hover:bg-[#0f1a3f] transition-colors text-lg font-medium"
-      >
-        Contact Us Today
-      </button>
+  {/if}
+  
+  {#if showNewContent}
+    <div 
+      class="container mx-auto flex max-w-3xl flex-col items-center justify-center space-y-8 text-center"
+      in:fade={{ duration: 700 }}
+    >
+      <!-- Logo remains visible -->
+      <div class="mb-2">
+        <img src="/favicon.png" alt="WiseOwl Tutoring Logo" width="120" height="120" class="mx-auto" />
+      </div>
+
+      <!-- New Content Header -->
+      <h2 class="text-4xl font-bold tracking-tight sm:text-5xl text-slate-900">
+        Why Choose WiseOwl Tutoring?
+      </h2>
+
+      <!-- Benefits in a grid layout -->
+      <div class="grid grid-cols-1 gap-8 pt-6 md:grid-cols-2">
+        <div class="flex flex-col items-center text-center p-4">
+          <div class="mb-4 rounded-full bg-purple-100 p-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Personalized Approach</h3>
+          <p class="text-slate-700">Customized learning plans tailored to each student's unique needs and learning style.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center p-4">
+          <div class="mb-4 rounded-full bg-purple-100 p-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Expert Tutors</h3>
+          <p class="text-slate-700">Highly qualified educators with proven track records in their respective subjects.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center p-4">
+          <div class="mb-4 rounded-full bg-purple-100 p-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Proven Results</h3>
+          <p class="text-slate-700">Our students consistently show significant improvement in grades and confidence.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center p-4">
+          <div class="mb-4 rounded-full bg-purple-100 p-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Flexible Scheduling</h3>
+          <p class="text-slate-700">Convenient online and in-person sessions that fit into your busy life.</p>
+        </div>
+      </div>
     </div>
-  </div>
+  {/if}
 </div>
+
+<style>
+  /* Custom animations */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+</style>

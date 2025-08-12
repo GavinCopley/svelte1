@@ -63,6 +63,12 @@
 		role={disabled ? "link" : undefined}
 		tabindex={disabled ? -1 : undefined}
 		{...restProps}
+		on:click
+		on:focus
+		on:blur
+		on:mouseover
+		on:mouseenter
+		on:mouseleave
 	>
 		{@render children?.()}
 	</a>
@@ -74,6 +80,12 @@
 		{type}
 		{disabled}
 		{...restProps}
+		on:click
+		on:focus
+		on:blur
+		on:mouseover
+		on:mouseenter
+		on:mouseleave
 	>
 		{@render children?.()}
 	</button>
