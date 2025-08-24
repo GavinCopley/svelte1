@@ -3,6 +3,7 @@
   import { tick } from 'svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
+  import { Button } from '$lib/components/ui/button';
 
   type Subject = { key: string; name: string; icon: string; tag: string; desc: string };
 
@@ -140,6 +141,12 @@
   function openContactForm() {
     window.open('', '_blank');
   }
+  
+  function endTutorial() {
+    if (browser) {
+      window.location.href = '/subjects';
+    }
+  }
 </script>
 
 <!-- Soft animated background -->
@@ -171,12 +178,20 @@
       aria-label="Tutorial hint"
       tabindex="0"
       transition:fly={{ y: 20, duration: 300 }}
-      on:click={() => tutorialStep = 1}
       on:keydown={(e) => e.key === 'Enter' && (tutorialStep = 1)}
     >
       <div class="tutorial-arrow"></div>
       <h4>👋 Tutorial</h4>
       <p>Click on a subject to see your learning options.</p>
+      <div class="tutorial-button-container">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          on:click={endTutorial}
+        >
+          Skip Tutorial
+        </Button>
+      </div>
     </div>
   {/if}
   
@@ -288,12 +303,20 @@
           aria-label="Tutorial next step"
           tabindex="0"
           transition:fly={{ y: 20, duration: 300 }}
-          on:click={() => tutorialStep = 0}
           on:keydown={(e) => e.key === 'Enter' && (tutorialStep = 0)}
         >
           <div class="tutorial-arrow tutorial-arrow-2"></div>
           <h4>🎯 Next Step</h4>
           <p>Select AP or non-AP depending on the class your student is taking!</p>
+          <div class="tutorial-button-container">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              on:click={() => tutorialStep = 0}
+            >
+              Got it
+            </Button>
+          </div>
         </div>
       {/if}
 
@@ -371,6 +394,12 @@
   .tutorial-box p {
     margin: 0;
     font-size: 16px;
+  }
+  
+  .tutorial-button-container {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
   }
   
   .tutorial-arrow {
