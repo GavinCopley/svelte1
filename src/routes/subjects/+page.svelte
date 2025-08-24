@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { fade, scale } from 'svelte/transition';
+  import { fade, scale, fly } from 'svelte/transition';
   import { tick } from 'svelte';
+  import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
 
   type Subject = { key: string; name: string; icon: string; tag: string; desc: string };
 
@@ -50,6 +52,19 @@
   let dialogEl: HTMLElement | null = null;
   let lastTrigger: HTMLElement | null = null;
 
+  // Tutorial feature
+  let isTutorial = false;
+  let tutorialStep = 1;
+  let gridRef: HTMLElement | null = null;
+
+  // Check if tutorial mode is enabled from URL parameter
+  onMount(() => {
+    if (browser) {
+      const urlParams = new URLSearchParams(window.location.search);
+      isTutorial = urlParams.get('tutorial') === 'true';
+    }
+  });
+
   function getFocusable(root: HTMLElement) {
     const sel = [
       'a[href]',
@@ -74,6 +89,11 @@
     if (dialogEl) {
       const focusables = getFocusable(dialogEl);
       (focusables[0] ?? dialogEl).focus();
+    }
+    
+    // Progress tutorial to step 2 if in tutorial mode
+    if (isTutorial && tutorialStep === 1) {
+      tutorialStep = 2;
     }
   }
 
@@ -143,7 +163,24 @@
   class="relative z-[1] max-w-6xl mx-auto px-4 transition filter"
   aria-hidden={modalOpen}
 >
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  <!-- Tutorial box for step 1 -->
+  {#if isTutorial && tutorialStep === 1}
+    <div 
+      class="tutorial-box"
+      role="tooltip"
+      aria-label="Tutorial hint"
+      tabindex="0"
+      transition:fly={{ y: 20, duration: 300 }}
+      on:click={() => tutorialStep = 1}
+      on:keydown={(e) => e.key === 'Enter' && (tutorialStep = 1)}
+    >
+      <div class="tutorial-arrow"></div>
+      <h4>👋 Tutorial</h4>
+      <p>Click on a subject to see your learning options.</p>
+    </div>
+  {/if}
+  
+  <div bind:this={gridRef} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {#each subjects as s, i}
       <button
         class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
@@ -243,6 +280,22 @@
         </div>
         <button class="icon-btn" on:click={close} aria-label="Close dialog">✕</button>
       </header>
+      <!-- Tutorial box for step 2 -->
+      {#if isTutorial && tutorialStep === 2}
+        <div 
+          class="tutorial-box tutorial-box-2"
+          role="tooltip" 
+          aria-label="Tutorial next step"
+          tabindex="0"
+          transition:fly={{ y: 20, duration: 300 }}
+          on:click={() => tutorialStep = 0}
+          on:keydown={(e) => e.key === 'Enter' && (tutorialStep = 0)}
+        >
+          <div class="tutorial-arrow tutorial-arrow-2"></div>
+          <h4>🎯 Next Step</h4>
+          <p>Select AP or non-AP depending on the class your student is taking!</p>
+        </div>
+      {/if}
 
       <section class="cards">
         <!-- AP -->
@@ -283,6 +336,76 @@
 {/if}
 
 <style>
+  /* ---------- Tutorial boxes ---------- */
+  .tutorial-box {
+    position: absolute;
+    top: -75px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4338ca;
+    color: white;
+    padding: 18px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+    z-index: 100;
+    max-width: 400px;
+    text-align: center;
+    cursor: pointer;
+    animation: pulse 2s infinite;
+    border: none;
+    font-family: inherit;
+    display: block;
+    width: auto;
+  }
+  
+  .tutorial-box:focus {
+    outline: 3px solid white;
+    outline-offset: 2px;
+  }
+  
+  .tutorial-box h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+  }
+  
+  .tutorial-box p {
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  .tutorial-arrow {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #4338ca;
+  }
+  
+  .tutorial-box-2 {
+    top: 10px;
+    right: 10px;
+    left: auto;
+    transform: none;
+    background: #059669;
+    box-shadow: 0 10px 30px rgba(5, 150, 105, 0.4);
+  }
+  
+  .tutorial-arrow-2 {
+    left: auto;
+    right: 20px;
+    border-top: 10px solid #059669;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+  }
+
   /* ---------- Background blobs & entrance animations ---------- */
   .bg{ position:fixed; inset:0; pointer-events:none; overflow:hidden; }
   .blob{
