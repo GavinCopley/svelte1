@@ -26,9 +26,9 @@
                       <Icon name="subjects" />
                       <span>Subjects</span>
                   </a>
-                  <a href="/pricing" class="font-semibold hover:bg-gray-700 rounded px-3 py-2 text-lg flex items-center space-x-2 text-white transition-colors">
-                      <Icon name="pricing" />
-                      <span>Pricing</span>
+                  <a href="/tutors" class="font-semibold hover:bg-gray-700 rounded px-3 py-2 text-lg flex items-center space-x-2 text-white transition-colors">
+                      <Icon name="tutors" />
+                      <span>Tutors</span>
                   </a>
                   <a href="/about" class="font-semibold hover:bg-gray-700 rounded px-3 py-2 text-lg flex items-center space-x-2 text-white transition-colors">
                       <Icon name="about" />
