@@ -76,16 +76,6 @@
         <div class="flex flex-col items-center text-center p-4">
           <div class="mb-4 rounded-full bg-purple-100 p-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Personalized Approach</h3>
-          <p class="text-slate-700">Customized learning plans tailored to each student's unique needs and learning style.</p>
-        </div>
-
-        <div class="flex flex-col items-center text-center p-4">
-          <div class="mb-4 rounded-full bg-purple-100 p-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
@@ -102,16 +92,13 @@
           <h3 class="text-xl font-semibold mb-2">Proven Results</h3>
           <p class="text-slate-700">Our students consistently show significant improvement in grades and confidence.</p>
         </div>
-
-        <div class="flex flex-col items-center text-center p-4">
-          <div class="mb-4 rounded-full bg-purple-100 p-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Flexible Scheduling</h3>
-          <p class="text-slate-700">Convenient online and in-person sessions that fit into your busy life.</p>
-        </div>
+      </div>
+      
+      <!-- Centered button linking to subjects page -->
+      <div class="flex justify-center mt-8">
+        <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" href="/subjects?tutorial=true">
+          Explore Our Subjects
+        </Button>
       </div>
     </div>
   {/if}
