@@ -249,7 +249,7 @@
         const data = doc.data();
         
         // Process subjects data
-        let formattedSubjects = [];
+        let formattedSubjects: string[] = [];
         if (Array.isArray(data.subjects)) {
           formattedSubjects = [...data.subjects];
         } else if (typeof data.subjects === 'string') {
@@ -379,7 +379,8 @@
                 const data = doc.data();
                 
                 // Handle different ways subjects might be stored in Firestore
-                let formattedSubjects = [];
+                let formattedSubjects: string[] = [];
+                
                 if (Array.isArray(data.subjects)) {
                   formattedSubjects = data.subjects;
                 } else if (typeof data.subjects === 'string') {
