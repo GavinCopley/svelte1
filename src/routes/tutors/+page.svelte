@@ -1,17 +1,59 @@
-<script> 
+<script lang="ts"> 
   import { onMount } from 'svelte';
+  import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
+  import { db } from '$lib/firebase';
+  import type { Tutor } from '$lib/services/tutorService';
+  
+  // Initialize tutors array with loading state
+  let tutors: Tutor[] = [];
+  let loading = true;
+  let error = null;
+  
+  // Load tutors directly from Firestore with verbose logging
+  onMount(async () => {
+    try {
+      loading = true;
+      console.log("Attempting to load tutors from Firestore...");
+      console.log("Firestore instance:", db ? "Available" : "Not Available");
+      
+      // Direct Firestore access for debugging
+      const tutorsCollection = collection(db, "tutors");
+      console.log("Collection reference created:", tutorsCollection);
+      
+      const querySnapshot = await getDocs(tutorsCollection);
+      console.log("Firestore query complete. Documents found:", querySnapshot.size);
+      
+      if (querySnapshot.empty) {
+        console.log("No tutors found in collection");
+        tutors = [];
+      } else {
+        tutors = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log("Document ID:", doc.id);
+          console.log("Document data:", data);
+          return {
+            id: doc.id,
+            name: data.name || "Unknown",
+            subjects: Array.isArray(data.subjects) ? data.subjects : [],
+            education: data.education || "",
+            experience: data.experience || "",
+            bio: data.bio || "",
+            image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+          };
+        });
+        console.log("Processed tutors data:", tutors);
+      }
+      loading = false;
+    } catch (err) {
+      console.error("Error fetching tutors:", err);
+      console.error("Error details:", err.stack);
+      error = err.message || "Failed to load tutors";
+      loading = false;
+    }
+  });
 
-  // Initialize empty tutors array
-  let tutors = [];
-
-  // Add Tutor form state
+  // Form state
   let showForm = false;
-
-  // Password modal state
-  let showPasswordModal = false;
-  let adminAuthed = false;
-  let tempPassword = '';
-  let pwdError = '';
 
   let form = {
     name: '',
@@ -19,18 +61,13 @@
     education: '',
     experience: '',
     bio: '',
-    image: '',
-    password: '' // optional (kept for compatibility)
+    image: ''
   };
   let errors = {};
 
   function resetForm() {
-    form = { name:'', subjects:'', education:'', experience:'', bio:'', image:'', password:'' };
+    form = { name:'', subjects:'', education:'', experience:'', bio:'', image:'' };
     errors = {};
-  }
-
-  function nextId() {
-    return tutors.length ? Math.max(...tutors.map(t => t.id)) + 1 : 1;
   }
 
   function validate() {
@@ -46,98 +83,49 @@
     return Object.keys(errors).length === 0;
   }
 
-  function addTutor() {
+  async function addTutor() {
     if (!validate()) return;
 
-    const newTutor = {
-      id: nextId(),
-      name: form.name.trim(),
-      subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
-      education: form.education.trim(),
-      experience: form.experience.trim(),
-      bio: form.bio.trim(),
-      image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
-    };
-    tutors = [newTutor, ...tutors]; // add to top
-    resetForm();
-    showForm = false;
-  }
-
-  // -------- Password modal actions --------
-  function openAddTutor() {
-    if (!adminAuthed) {
-      console.log('[Admin Modal] Opening password verification modal');
-      showPasswordModal = true;
-      return;
+    try {
+      const newTutor = {
+        name: form.name.trim(),
+        subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
+        education: form.education.trim(),
+        experience: form.experience.trim(),
+        bio: form.bio.trim(),
+        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
+      };
+      
+      console.log("Adding new tutor to Firestore:", newTutor);
+      
+      // Add directly to Firestore
+      const tutorsCollection = collection(db, "tutors");
+      const docRef = await addDoc(tutorsCollection, newTutor);
+      console.log("Document written with ID:", docRef.id);
+      
+      // Refresh tutors with direct Firestore access
+      const querySnapshot = await getDocs(tutorsCollection);
+      tutors = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || "Unknown",
+          subjects: Array.isArray(data.subjects) ? data.subjects : [],
+          education: data.education || "",
+          experience: data.experience || "",
+          bio: data.bio || "",
+          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+        };
+      });
+      
+      resetForm();
+      showForm = false;
+    } catch (err) {
+      console.error('Error adding tutor:', err);
+      console.error('Error details:', err.stack);
+      alert('Failed to add tutor: ' + (err.message || 'Unknown error'));
     }
-    console.log('[Admin Modal] User already authenticated, toggling form');
-    showForm = !showForm;
   }
-
-  function confirmPassword() {
-    console.log('[Admin Auth] Attempting password verification');
-    if (tempPassword === '83120258808') {
-      console.log('[Admin Auth] SUCCESS: Password verified correctly');
-      adminAuthed = true;
-      pwdError = '';
-      tempPassword = '';
-      showPasswordModal = false;
-      showForm = true; // go straight to the form after success
-    } else {
-      console.log('[Admin Auth] FAILED: Incorrect password entered');
-      pwdError = 'Incorrect password';
-    }
-  }
-
-  function closeModal() {
-    showPasswordModal = false;
-    pwdError = '';
-    tempPassword = '';
-  }
-
-  function handleModalKey(e) {
-    console.log(`[Admin Modal Key] Modal key pressed: "${e.key}"`);
-    if (e.key === 'Enter') confirmPassword();
-    if (e.key === 'Escape') closeModal();
-  }
-
-  // -------- Secret sequence: "Admin1" (case-insensitive, ≤2s gaps) --------
-  const SECRET = 'admin1';
-  const MAX_GAP_MS = 2000;
-  let typedBuffer = '';
-  let lastKeyTime = 0;
-
-  onMount(() => {
-    // Set up keyboard listener for admin sequence
-    const listener = (e) => {
-      const now = Date.now();
-      if (now - lastKeyTime > MAX_GAP_MS) {
-        typedBuffer = '';
-        console.log('[Admin Sequence] Reset: Timeout exceeded');
-      }
-      lastKeyTime = now;
-
-      // Only consider single printable characters
-      if (e.key && e.key.length === 1) {
-        typedBuffer += e.key.toLowerCase();
-        console.log(`[Admin Sequence] Key pressed: "${e.key}" | Current buffer: "${typedBuffer}"`);
-        
-        if (typedBuffer.length > SECRET.length) {
-          typedBuffer = typedBuffer.slice(-SECRET.length);
-          console.log(`[Admin Sequence] Buffer trimmed to: "${typedBuffer}"`);
-        }
-        
-        if (typedBuffer.endsWith(SECRET)) {
-          console.log('[Admin Sequence] SUCCESS: Admin sequence completed!');
-          typedBuffer = '';
-          openAddTutor();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', listener);
-    return () => window.removeEventListener('keydown', listener);
-  });
 </script>
 
 <svelte:head>
@@ -179,17 +167,47 @@
     </div>
   </div>
 
-  <!-- Featured Tutors + Add button -->
+  <!-- Featured Tutors -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
-    <!-- Button is intentionally hidden -->
-    <button
-      class="hidden"
-      on:click={openAddTutor}
-      aria-expanded={showForm}
-      aria-controls="add-tutor-form"
-    >
-      <span>➕</span> Add Tutor
+    <button 
+      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
+      on:click={() => {
+        console.log('Debug: Manual fetch attempt');
+        loading = true;
+        error = null;
+        
+        // Attempt to fetch again
+        const fetchData = async () => {
+          try {
+            const tutorsCollection = collection(db, "tutors");
+            const querySnapshot = await getDocs(tutorsCollection);
+            console.log("Manual fetch - docs found:", querySnapshot.size);
+            
+            tutors = querySnapshot.docs.map(doc => {
+              const data = doc.data();
+              console.log("Doc data:", data);
+              return {
+                id: doc.id,
+                name: data.name || "Unknown",
+                subjects: Array.isArray(data.subjects) ? data.subjects : [],
+                education: data.education || "",
+                experience: data.experience || "",
+                bio: data.bio || "",
+                image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+              };
+            });
+            loading = false;
+          } catch (err) {
+            console.error("Manual fetch error:", err);
+            error = err.message || "Failed to load tutors";
+            loading = false;
+          }
+        };
+        
+        fetchData();
+      }}>
+      Refresh Data
     </button>
   </div>
 
@@ -234,12 +252,6 @@
           <input class="w-full border rounded-md px-3 py-2" placeholder="https://..." bind:value={form.image} />
           {#if errors.image}<p class="text-sm text-red-600 mt-1">{errors.image}</p>{/if}
         </div>
-
-        <!-- Optional password field kept (not required) -->
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium mb-1">Password (optional)</label>
-          <input type="password" class="w-full border rounded-md px-3 py-2" bind:value={form.password} />
-        </div>
       </div>
 
       <!-- Live preview -->
@@ -276,7 +288,23 @@
 
   <!-- Featured Tutors Grid -->
   <div class="mb-12">
-    {#if tutors.length > 0}
+    {#if loading}
+      <div class="bg-white rounded-lg p-8 text-center shadow-md">
+        <div class="animate-spin inline-block w-12 h-12 border-4 border-current border-t-transparent text-[#151f54] rounded-full mb-4" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <h3 class="text-2xl font-bold mb-2">Loading Tutors</h3>
+        <p class="text-gray-600">Please wait while we fetch our tutor profiles...</p>
+      </div>
+    {:else if error}
+      <div class="bg-white rounded-lg p-8 text-center shadow-md border-l-4 border-red-500">
+        <div class="text-5xl mb-4 text-red-500">⚠️</div>
+        <h3 class="text-2xl font-bold mb-2">Error Loading Tutors</h3>
+        <p class="text-red-600 mb-4">{error}</p>
+        <button class="bg-[#151f54] text-white px-4 py-2 rounded-md font-semibold hover:bg-[#212d6e] shadow"
+          on:click={() => window.location.reload()}>Try Again</button>
+      </div>
+    {:else if tutors.length > 0}
       <div class="grid md:grid-cols-2 gap-8">
         {#each tutors as tutor (tutor.id)}
           <div class="bg-white rounded-lg overflow-hidden shadow-md flex">
@@ -297,8 +325,7 @@
       <div class="bg-white rounded-lg p-8 text-center shadow-md">
         <div class="text-5xl mb-4">👩‍🏫</div>
         <h3 class="text-2xl font-bold mb-2">No Tutors Available</h3>
-        <p class="text-gray-600 mb-4">Our team of expert tutors will be added soon.</p>
-        <p class="text-sm text-gray-500">Administrators can use the admin access to add tutors.</p>
+        <p class="text-gray-600 mb-4">No tutors found in the database. Please check back later.</p>
       </div>
     {/if}
   </div>
@@ -340,58 +367,4 @@
       </div>
     </div>
   </div>
-
-  <!-- Debug Button (admin modal) -->
-  <div class="mb-12">
-    <button class="bg-red-500 text-white p-2" on:click={openAddTutor}>
-      Debug: Open Admin Modal
-    </button>
-  </div>
 </div>
-
-<!-- Password Modal -->
-{#if showPasswordModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center" on:keydown={handleModalKey} tabindex="0" aria-modal="true" role="dialog">
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black/50" on:click={closeModal}></div>
-
-    <!-- Panel -->
-    <div class="relative w-[92%] max-w-md rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Header / gradient -->
-      <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-6">
-        <h3 class="text-white text-xl font-bold">Admin Access</h3>
-        <p class="text-blue-100 text-sm mt-1">Enter the password to add a new tutor.</p>
-      </div>
-
-      <!-- Body -->
-      <div class="bg-white p-6">
-        <label class="block text-sm font-medium mb-2 text-gray-700">Password</label>
-        <input
-          type="password"
-          class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          bind:value={tempPassword}
-        />
-        {#if pwdError}
-          <p class="text-sm text-red-600 mt-2">{pwdError}</p>
-        {/if}
-
-        <div class="mt-6 flex items-center gap-3">
-          <button
-            class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md font-semibold shadow hover:bg-blue-700 active:scale-[.98] transition"
-            on:click={confirmPassword}
-          >Unlock</button>
-          <button
-            class="px-4 py-2 rounded-md border hover:bg-gray-50"
-            on:click={closeModal}
-          >Cancel</button>
-        </div>
-      </div>
-
-      <!-- Subtle bottom bar -->
-      <div class="bg-blue-50 px-6 py-3 text-xs text-blue-900/80 flex items-center gap-2">
-        <span class="inline-block h-2 w-2 rounded-full bg-blue-600"></span>
-        Authorized users only
-      </div>
-    </div>
-  </div>
-{/if}
