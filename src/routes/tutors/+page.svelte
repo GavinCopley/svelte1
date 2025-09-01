@@ -538,29 +538,33 @@
             <div class="w-1/3">
               <img src={tutor.image} alt={tutor.name} class="w-full h-full object-cover" />
             </div>
-            <div class="w-2/3 p-6">
-              <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
-              <p class="text-gray-600 mb-2">{tutor.education}</p>
-              <p class="mb-2">
-                <strong>Subjects:</strong> 
-                {#if tutor.subjects && tutor.subjects.length > 0}
-                  {tutor.subjects.join(", ")}
-                {:else}
-                  Not specified
-                {/if}
-              </p>
-              <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
-              <p class="line-clamp-2 text-sm mb-3">{tutor.bio}</p>
-              <button
-                class="mt-2 bg-[#151f54] text-white px-4 py-2 rounded-md hover:bg-[#212d6e] transition-colors flex items-center"
-                on:click={() => openTutorProfile(tutor)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                View Profile
-              </button>
+            <div class="w-2/3 p-6 relative flex flex-col">
+              <div class="flex-grow">
+                <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
+                <p class="text-gray-600 mb-2">{tutor.education}</p>
+                <p class="mb-2">
+                  <strong>Subjects:</strong> 
+                  {#if tutor.subjects && tutor.subjects.length > 0}
+                    {tutor.subjects.join(", ")}
+                  {:else}
+                    Not specified
+                  {/if}
+                </p>
+                <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
+                <p class="line-clamp-2 text-sm mb-3">{tutor.bio}</p>
+              </div>
+              <div class="flex justify-end">
+                <button
+                  class="bg-[#151f54] text-white px-5 py-2 rounded-md hover:bg-[#212d6e] transition-colors flex items-center font-medium"
+                  on:click={() => openTutorProfile(tutor)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                  </svg>
+                  View Profile
+                </button>
+              </div>
             </div>
           </div>
         {/each}
