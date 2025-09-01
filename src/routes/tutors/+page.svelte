@@ -3,11 +3,22 @@
   import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
   import { db } from '$lib/firebase';
   import type { Tutor } from '$lib/services/tutorService';
+  import { Modal } from '$lib/components';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
   let loading = true;
   let error: string | null = null;
+  
+  // Modal state
+  let modalOpen = false;
+  let selectedTutor: Tutor | null = null;
+  
+  // Function to open the tutor profile modal
+  function openTutorProfile(tutor: Tutor) {
+    selectedTutor = tutor;
+    modalOpen = true;
+  }
   
   // Secret code detection
   let keyBuffer: string[] = [];
@@ -539,7 +550,17 @@
                 {/if}
               </p>
               <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
-              <p>{tutor.bio}</p>
+              <p class="line-clamp-2 text-sm mb-3">{tutor.bio}</p>
+              <button
+                class="mt-2 bg-[#151f54] text-white px-4 py-2 rounded-md hover:bg-[#212d6e] transition-colors flex items-center"
+                on:click={() => openTutorProfile(tutor)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View Profile
+              </button>
             </div>
           </div>
         {/each}
@@ -553,7 +574,91 @@
     {/if}
   </div>
 
-  <!-- Call to Action -->
+  <!-- Tutor Profile Modal -->
+  {#if modalOpen && selectedTutor}
+    <Modal bind:open={modalOpen}>
+      <svelte:fragment slot="header">
+        <div class="flex items-center">
+          <h2 class="text-2xl font-bold text-[#151f54]">{selectedTutor.name}</h2>
+          {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+            <span class="ml-3 px-3 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">
+              {selectedTutor.subjects[0]}
+              {#if selectedTutor.subjects.length > 1}
+                +{selectedTutor.subjects.length - 1} more
+              {/if}
+            </span>
+          {/if}
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="content">
+        <div class="flex flex-col md:flex-row gap-6">
+          <!-- Tutor Image -->
+          <div class="md:w-1/3">
+            <img 
+              src={selectedTutor.image} 
+              alt={selectedTutor.name} 
+              class="w-full aspect-square object-cover rounded-lg shadow-md"
+            />
+            
+            <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 class="font-semibold text-lg mb-2">Subjects</h3>
+              {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+                <ul class="list-disc list-inside space-y-1">
+                  {#each selectedTutor.subjects as subject}
+                    <li>{subject}</li>
+                  {/each}
+                </ul>
+              {:else}
+                <p class="text-gray-500">No subjects specified</p>
+              {/if}
+            </div>
+          </div>
+          
+          <!-- Tutor Details -->
+          <div class="md:w-2/3">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold mb-2">Education</h3>
+              <p>{selectedTutor.education || 'Not specified'}</p>
+            </div>
+            
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold mb-2">Experience</h3>
+              <p>{selectedTutor.experience || 'Not specified'}</p>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-2">About</h3>
+              <p class="whitespace-pre-line">{selectedTutor.bio || 'No biography available.'}</p>
+            </div>
+          </div>
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="footer">
+        <div class="flex justify-between w-full">
+          <button
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2"
+            on:click={() => modalOpen = false}
+          >
+            Close
+          </button>
+          
+          <a 
+            href="/booking" 
+            class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2 flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+            </svg>
+            Book a Session
+          </a>
+        </div>
+      </svelte:fragment>
+    </Modal>
+  {/if}
+
+<!-- Call to Action -->
   <div class="bg-blue-50 border-l-4 border-blue-500 p-8 rounded-lg shadow-md mb-12">
     <h2 class="text-2xl font-bold mb-3">Ready to Learn with Our Expert Tutors?</h2>
     <p class="mb-4">Schedule a session with one of our tutors and experience the difference personalized education can make.</p>
