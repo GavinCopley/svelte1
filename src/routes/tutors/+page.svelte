@@ -7,7 +7,7 @@
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
   let loading = true;
-  let error = null;
+  let error: string | null = null;
   
   // Load tutors directly from Firestore with verbose logging
   onMount(async () => {
@@ -34,7 +34,7 @@
           console.log("Subjects type:", typeof data.subjects, "Value:", data.subjects);
           
           // Handle different ways subjects might be stored in Firestore
-          let formattedSubjects = [];
+          let formattedSubjects: string[] = [];
           
           if (Array.isArray(data.subjects)) {
             // Handle regular array
@@ -92,8 +92,12 @@
       loading = false;
     } catch (err) {
       console.error("Error fetching tutors:", err);
-      console.error("Error details:", err.stack);
-      error = err.message || "Failed to load tutors";
+      if (err instanceof Error) {
+        console.error("Error details:", err.stack);
+        error = err.message || "Failed to load tutors";
+      } else {
+        error = "Failed to load tutors";
+      }
       loading = false;
     }
   });
@@ -109,7 +113,15 @@
     bio: '',
     image: ''
   };
-  let errors = {};
+  type FormErrors = {
+    name?: string;
+    subjects?: string;
+    education?: string;
+    experience?: string;
+    bio?: string;
+    image?: string;
+  };
+  let errors: FormErrors = {};
 
   function resetForm() {
     form = { name:'', subjects:'', education:'', experience:'', bio:'', image:'' };
@@ -176,12 +188,16 @@
         };
       });
       
-      resetForm();
       showForm = false;
+      resetForm();
     } catch (err) {
       console.error('Error adding tutor:', err);
-      console.error('Error details:', err.stack);
-      alert('Failed to add tutor: ' + (err.message || 'Unknown error'));
+      if (err instanceof Error) {
+        console.error('Error details:', err.stack);
+        alert('Failed to add tutor: ' + (err.message || 'Unknown error'));
+      } else {
+        alert('Failed to add tutor: Unknown error');
+      }
     }
   }
 </script>
@@ -285,7 +301,7 @@
             loading = false;
           } catch (err) {
             console.error("Manual fetch error:", err);
-            error = err.message || "Failed to load tutors";
+            error = err instanceof Error ? err.message : "Failed to load tutors";
             loading = false;
           }
         };
@@ -303,38 +319,38 @@
 
       <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-medium mb-1">Full Name *</label>
-          <input class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring" bind:value={form.name} />
+          <label for="tutor-name" class="block text-sm font-medium mb-1">Full Name *</label>
+          <input id="tutor-name" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring" bind:value={form.name} />
           {#if errors.name}<p class="text-sm text-red-600 mt-1">{errors.name}</p>{/if}
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Subjects (comma-separated) *</label>
-          <input class="w-full border rounded-md px-3 py-2" placeholder="e.g. Algebra, Physics" bind:value={form.subjects} />
+          <label for="tutor-subjects" class="block text-sm font-medium mb-1">Subjects (comma-separated) *</label>
+          <input id="tutor-subjects" class="w-full border rounded-md px-3 py-2" placeholder="e.g. Algebra, Physics" bind:value={form.subjects} />
           {#if errors.subjects}<p class="text-sm text-red-600 mt-1">{errors.subjects}</p>{/if}
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Education *</label>
-          <input class="w-full border rounded-md px-3 py-2" placeholder="e.g. Ph.D. in ..." bind:value={form.education} />
+          <label for="tutor-education" class="block text-sm font-medium mb-1">Education *</label>
+          <input id="tutor-education" class="w-full border rounded-md px-3 py-2" placeholder="e.g. Ph.D. in ..." bind:value={form.education} />
           {#if errors.education}<p class="text-sm text-red-600 mt-1">{errors.education}</p>{/if}
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Experience *</label>
-          <input class="w-full border rounded-md px-3 py-2" placeholder="e.g. 10+ years ..." bind:value={form.experience} />
+          <label for="tutor-experience" class="block text-sm font-medium mb-1">Experience *</label>
+          <input id="tutor-experience" class="w-full border rounded-md px-3 py-2" placeholder="e.g. 10+ years ..." bind:value={form.experience} />
           {#if errors.experience}<p class="text-sm text-red-600 mt-1">{errors.experience}</p>{/if}
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium mb-1">Bio *</label>
-          <textarea class="w-full border rounded-md px-3 py-2 min-h-[90px]" bind:value={form.bio}></textarea>
+          <label for="tutor-bio" class="block text-sm font-medium mb-1">Bio *</label>
+          <textarea id="tutor-bio" class="w-full border rounded-md px-3 py-2 min-h-[90px]" bind:value={form.bio}></textarea>
           {#if errors.bio}<p class="text-sm text-red-600 mt-1">{errors.bio}</p>{/if}
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium mb-1">Image URL (optional)</label>
-          <input class="w-full border rounded-md px-3 py-2" placeholder="https://..." bind:value={form.image} />
+          <label for="tutor-image" class="block text-sm font-medium mb-1">Image URL (optional)</label>
+          <input id="tutor-image" class="w-full border rounded-md px-3 py-2" placeholder="https://..." bind:value={form.image} />
           {#if errors.image}<p class="text-sm text-red-600 mt-1">{errors.image}</p>{/if}
         </div>
       </div>
