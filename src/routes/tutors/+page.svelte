@@ -170,45 +170,6 @@
   <!-- Featured Tutors -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
-    <button 
-      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
-      on:click={() => {
-        console.log('Debug: Manual fetch attempt');
-        loading = true;
-        error = null;
-        
-        // Attempt to fetch again
-        const fetchData = async () => {
-          try {
-            const tutorsCollection = collection(db, "tutors");
-            const querySnapshot = await getDocs(tutorsCollection);
-            console.log("Manual fetch - docs found:", querySnapshot.size);
-            
-            tutors = querySnapshot.docs.map(doc => {
-              const data = doc.data();
-              console.log("Doc data:", data);
-              return {
-                id: doc.id,
-                name: data.name || "Unknown",
-                subjects: Array.isArray(data.subjects) ? data.subjects : [],
-                education: data.education || "",
-                experience: data.experience || "",
-                bio: data.bio || "",
-                image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-              };
-            });
-            loading = false;
-          } catch (err) {
-            console.error("Manual fetch error:", err);
-            error = err.message || "Failed to load tutors";
-            loading = false;
-          }
-        };
-        
-        fetchData();
-      }}>
-      Refresh Data
-    </button>
   </div>
 
   <!-- Inline Add Tutor Form -->
