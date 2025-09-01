@@ -314,13 +314,12 @@
 
 <div class="max-w-6xl mx-auto px-4" class:secret-activated={secretActivated}>
   <!-- Hero Section -->
-  <div class="bg-[#151f54] text-white rounded-lg p-10 mb-12 shadow-lg">
-    <h1 class="text-4xl font-bold mb-4">Meet Our Expert Tutors</h1>
-    <p class="text-xl max-w-3xl">
-      Learn from passionate educators who are experts in their fields. Our tutors are carefully selected
-      for their deep subject knowledge and ability to connect with students.
-    </p>
-  </div>
+  <section class="relative z-[1] text-center mb-12">
+  <h1 class="text-5xl font-extrabold text-[#151f54] mb-4 tracking-tight">Meet Our Tutors</h1>
+  <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
+    We have evaluated all of our tutors for their teaching skills and mastery of their subjects.
+  </p>
+</section>
 
   <!-- Tutor Selection Process -->
   <div class="mb-12">
@@ -347,9 +346,9 @@
     </div>
   </div>
 
-  <!-- Featured Tutors -->
+  <!-- Tutors -->
   <div class="mb-6">
-    <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
+    <h2 class="text-3xl font-bold text-[#151f54]">Tutors</h2>
   </div>
 
   <!-- Add Tutor Form -->
