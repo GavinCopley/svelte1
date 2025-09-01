@@ -44,11 +44,13 @@
   // Optional: persist to localStorage so added tutors stick around on refresh
   const LS_KEY = 'wiseowl:tutors';
   onMount(() => {
+    // First: Load tutors from localStorage
     try {
       const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
       if (Array.isArray(saved) && saved.length) tutors = saved;
     } catch {}
   });
+
   function persist() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(tutors)); } catch {}
   }
@@ -152,6 +154,13 @@
   let lastKeyTime = 0;
 
   onMount(() => {
+    // First: Load tutors from localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (Array.isArray(saved) && saved.length) tutors = saved;
+    } catch {}
+    
+    // Second: Set up keyboard listener for admin sequence
     const listener = (e) => {
       const now = Date.now();
       if (now - lastKeyTime > MAX_GAP_MS) {
