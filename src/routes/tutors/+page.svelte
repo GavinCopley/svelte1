@@ -189,12 +189,10 @@
     errors = {};
   }
   
-  // Toggle form visibility
-  function toggleForm() {
-    showForm = !showForm;
-    if (!showForm) {
-      resetForm();
-    }
+  // Close form function (since form can only be opened via secret code)
+  function closeForm() {
+    showForm = false;
+    resetForm();
   }
   
   // Show visual feedback when secret code is activated
@@ -293,7 +291,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
-      <span>Admin mode activated</span>
+      <span>Admin mode activated - Tutor management enabled</span>
     </div>
   </div>
 {/if}
@@ -336,21 +334,10 @@
   <!-- Featured Tutors -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
-    <div class="flex space-x-3">
-      <!-- Add New Tutor Button -->
-      <button 
-        class="bg-[#151f54] hover:bg-[#212d6e] text-white font-semibold py-2 px-4 rounded shadow text-sm flex items-center"
-        on:click={toggleForm}>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        {showForm ? 'Cancel' : 'Add New Tutor'}
-      </button>
-      
-      <!-- Refresh Data Button -->
-      <button 
-        class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
-        on:click={() => {
+    <!-- Only Refresh Data Button (Add Tutor button removed) -->
+    <button 
+      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
+      on:click={() => {
           console.log('Debug: Manual fetch attempt');
           loading = true;
           error = null;
@@ -414,8 +401,7 @@
           fetchData();
         }}>
         Refresh Data
-      </button>
-    </div>
+    </button>
   </div>
 
   <!-- Add Tutor Form -->
@@ -425,7 +411,7 @@
         <h3 class="text-xl font-bold text-[#151f54]">Add New Tutor</h3>
         <button 
           class="text-gray-400 hover:text-gray-600"
-          on:click={toggleForm}
+          on:click={closeForm}
           aria-label="Close form">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -557,7 +543,7 @@
       <div class="mt-6 flex justify-end space-x-3">
         <button
           class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          on:click={toggleForm}>
+          on:click={closeForm}>
           Cancel
         </button>
         <button
