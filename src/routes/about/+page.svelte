@@ -1,3 +1,7 @@
+<svelte:head>
+    <title>About Us | WiseOwl</title>
+</svelte:head>
+
 <h2 class="text-3xl font-bold text-[#151f54] mb-6">About WiseOwl</h2>
 
 <!-- Founder Section: Image + Description -->

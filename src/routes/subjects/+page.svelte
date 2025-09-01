@@ -149,6 +149,10 @@
   }
 </script>
 
+<svelte:head>
+    <title>Subjects | WiseOwl</title>
+</svelte:head>
+
 <!-- Soft animated background -->
 <div class="bg">
   <div class="blob b1"></div>

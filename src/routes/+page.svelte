@@ -22,6 +22,10 @@
   });
 </script>
 
+<svelte:head>
+    <title>WiseOwl</title>
+</svelte:head>
+
 <div class="flex flex-col items-center justify-center p-4 text-slate-900 min-h-[calc(100vh-4rem)]">
   {#if showInitialContent}
     <div 
