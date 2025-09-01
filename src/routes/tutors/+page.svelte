@@ -205,6 +205,45 @@
     }, 3000);
   }
   
+  // Function to refresh tutors data (used after adding a new tutor)
+  async function refreshTutorsData() {
+    try {
+      loading = true;
+      const tutorsCollection = collection(db, "tutors");
+      const querySnapshot = await getDocs(tutorsCollection);
+      
+      tutors = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Process subjects data
+        let formattedSubjects: string[] = [];
+        if (Array.isArray(data.subjects)) {
+          formattedSubjects = [...data.subjects];
+        } else if (typeof data.subjects === 'string') {
+          formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (data.subjects && typeof data.subjects === 'object') {
+          formattedSubjects = Object.values(data.subjects);
+        }
+        
+        return {
+          id: doc.id,
+          name: data.name || "Unknown",
+          subjects: formattedSubjects,
+          education: data.education || "",
+          experience: data.experience || "",
+          bio: data.bio || "",
+          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+        };
+      });
+      
+      loading = false;
+    } catch (err) {
+      console.error("Error refreshing tutors:", err);
+      error = err instanceof Error ? err.message : "Failed to load tutors";
+      loading = false;
+    }
+  }
+  
   // Validate form data
   function validateForm() {
     errors = {};
@@ -242,30 +281,7 @@
       console.log("Document written with ID:", docRef.id);
       
       // Refresh tutors list
-      const querySnapshot = await getDocs(tutorsCollection);
-      tutors = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        
-        // Process subjects data
-        let formattedSubjects: string[] = [];
-        if (Array.isArray(data.subjects)) {
-          formattedSubjects = [...data.subjects];
-        } else if (typeof data.subjects === 'string') {
-          formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
-        } else if (data.subjects && typeof data.subjects === 'object') {
-          formattedSubjects = Object.values(data.subjects);
-        }
-        
-        return {
-          id: doc.id,
-          name: data.name || "Unknown",
-          subjects: formattedSubjects,
-          education: data.education || "",
-          experience: data.experience || "",
-          bio: data.bio || "",
-          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-        };
-      });
+      await refreshTutorsData();
       
       // Close form and reset
       showForm = false;
@@ -332,76 +348,8 @@
   </div>
 
   <!-- Featured Tutors -->
-  <div class="flex items-center justify-between mb-6">
+  <div class="mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
-    <!-- Only Refresh Data Button (Add Tutor button removed) -->
-    <button 
-      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
-      on:click={() => {
-          console.log('Debug: Manual fetch attempt');
-          loading = true;
-          error = null;
-          
-          // Attempt to fetch again
-          const fetchData = async () => {
-            try {
-              const tutorsCollection = collection(db, "tutors");
-              const querySnapshot = await getDocs(tutorsCollection);
-              console.log("Manual fetch - docs found:", querySnapshot.size);
-              
-              querySnapshot.forEach(doc => {
-                const data = doc.data();
-                console.log("Document ID:", doc.id);
-                console.log("Document data:", JSON.stringify(data, null, 2));
-                console.log("Subjects (type):", typeof data.subjects);
-                console.log("Subjects (value):", data.subjects);
-                if (data.subjects) {
-                  console.log("Is Array:", Array.isArray(data.subjects));
-                  console.log("Keys:", Object.keys(data.subjects));
-                }
-              });
-              
-              // Apply our enhanced subjects processing
-              tutors = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                
-                // Handle different ways subjects might be stored in Firestore
-                let formattedSubjects: string[] = [];
-                
-                if (Array.isArray(data.subjects)) {
-                  formattedSubjects = data.subjects;
-                } else if (typeof data.subjects === 'string') {
-                  formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
-                } else if (data.subjects && typeof data.subjects === 'object') {
-                  // If it's stored as an object with numeric keys (Firebase sometimes does this)
-                  formattedSubjects = Object.values(data.subjects);
-                }
-                
-                console.log("Formatted subjects:", formattedSubjects);
-                
-                return {
-                  id: doc.id,
-                  name: data.name || "Unknown",
-                  subjects: formattedSubjects,
-                  education: data.education || "",
-                  experience: data.experience || "",
-                  bio: data.bio || "",
-                  image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-                };
-              });
-              
-              loading = false;
-            } catch (err) {
-              console.error("Manual fetch error:", err);
-              error = err instanceof Error ? err.message : "Failed to load tutors";
-              loading = false;
-            }
-          };
-          
-          fetchData();
-        }}>
-        Refresh Data
-    </button>
   </div>
 
   <!-- Add Tutor Form -->
@@ -571,7 +519,7 @@
         <h3 class="text-2xl font-bold mb-2">Error Loading Tutors</h3>
         <p class="text-red-600 mb-4">{error}</p>
         <button class="bg-[#151f54] text-white px-4 py-2 rounded-md font-semibold hover:bg-[#212d6e] shadow"
-          on:click={() => window.location.reload()}>Try Again</button>
+          on:click={refreshTutorsData}>Try Again</button>
       </div>
     {:else if tutors.length > 0}
       <div class="grid md:grid-cols-2 gap-8">
