@@ -1,59 +1,8 @@
 <script> 
   import { onMount } from 'svelte';
 
-  // Use let so we can push new tutors
-  let tutors = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      subjects: ["Mathematics", "Physics"],
-      education: "Ph.D. in Applied Mathematics",
-      experience: "10+ years teaching at university level",
-      bio: "Dr. Johnson specializes in making complex math concepts accessible to students of all levels.",
-      image: "https://placehold.co/200x200?text=SJ"
-    },
-    {
-      id: 2,
-      name: "Prof. Michael Chen",
-      subjects: ["Chemistry", "Biology"],
-      education: "Ph.D. in Molecular Biology",
-      experience: "15 years teaching and research experience",
-      bio: "Prof. Chen brings laboratory experience to his teaching, making science come alive for students.",
-      image: "https://placehold.co/200x200?text=MC"
-    },
-    {
-      id: 3,
-      name: "Lisa Rodriguez",
-      subjects: ["Literature", "History"],
-      education: "Master's in English Literature",
-      experience: "8 years teaching at high school and college level",
-      bio: "Lisa's passion for storytelling helps students connect deeply with literary and historical texts.",
-      image: "https://placehold.co/200x200?text=LR"
-    },
-    {
-      id: 4,
-      name: "David Park",
-      subjects: ["Computer Science", "Programming"],
-      education: "M.S. in Computer Science",
-      experience: "12 years industry experience, 6 years teaching",
-      bio: "David combines real-world programming experience with clear, methodical teaching approaches.",
-      image: "https://placehold.co/200x200?text=DP"
-    }
-  ];
-
-  // Optional: persist to localStorage so added tutors stick around on refresh
-  const LS_KEY = 'wiseowl:tutors';
-  onMount(() => {
-    // First: Load tutors from localStorage
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (Array.isArray(saved) && saved.length) tutors = saved;
-    } catch {}
-  });
-
-  function persist() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(tutors)); } catch {}
-  }
+  // Initialize empty tutors array
+  let tutors = [];
 
   // Add Tutor form state
   let showForm = false;
@@ -110,7 +59,6 @@
       image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
     };
     tutors = [newTutor, ...tutors]; // add to top
-    persist();
     resetForm();
     showForm = false;
   }
@@ -118,20 +66,25 @@
   // -------- Password modal actions --------
   function openAddTutor() {
     if (!adminAuthed) {
+      console.log('[Admin Modal] Opening password verification modal');
       showPasswordModal = true;
       return;
     }
+    console.log('[Admin Modal] User already authenticated, toggling form');
     showForm = !showForm;
   }
 
   function confirmPassword() {
+    console.log('[Admin Auth] Attempting password verification');
     if (tempPassword === '83120258808') {
+      console.log('[Admin Auth] SUCCESS: Password verified correctly');
       adminAuthed = true;
       pwdError = '';
       tempPassword = '';
       showPasswordModal = false;
       showForm = true; // go straight to the form after success
     } else {
+      console.log('[Admin Auth] FAILED: Incorrect password entered');
       pwdError = 'Incorrect password';
     }
   }
@@ -143,6 +96,7 @@
   }
 
   function handleModalKey(e) {
+    console.log(`[Admin Modal Key] Modal key pressed: "${e.key}"`);
     if (e.key === 'Enter') confirmPassword();
     if (e.key === 'Escape') closeModal();
   }
@@ -154,27 +108,27 @@
   let lastKeyTime = 0;
 
   onMount(() => {
-    // First: Load tutors from localStorage
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (Array.isArray(saved) && saved.length) tutors = saved;
-    } catch {}
-    
-    // Second: Set up keyboard listener for admin sequence
+    // Set up keyboard listener for admin sequence
     const listener = (e) => {
       const now = Date.now();
       if (now - lastKeyTime > MAX_GAP_MS) {
         typedBuffer = '';
+        console.log('[Admin Sequence] Reset: Timeout exceeded');
       }
       lastKeyTime = now;
 
       // Only consider single printable characters
       if (e.key && e.key.length === 1) {
         typedBuffer += e.key.toLowerCase();
+        console.log(`[Admin Sequence] Key pressed: "${e.key}" | Current buffer: "${typedBuffer}"`);
+        
         if (typedBuffer.length > SECRET.length) {
           typedBuffer = typedBuffer.slice(-SECRET.length);
+          console.log(`[Admin Sequence] Buffer trimmed to: "${typedBuffer}"`);
         }
+        
         if (typedBuffer.endsWith(SECRET)) {
+          console.log('[Admin Sequence] SUCCESS: Admin sequence completed!');
           typedBuffer = '';
           openAddTutor();
         }
@@ -321,21 +275,32 @@
   {/if}
 
   <!-- Featured Tutors Grid -->
-  <div class="grid md:grid-cols-2 gap-8 mb-12">
-    {#each tutors as tutor (tutor.id)}
-      <div class="bg-white rounded-lg overflow-hidden shadow-md flex">
-        <div class="w-1/3">
-          <img src={tutor.image} alt={tutor.name} class="w-full h-full object-cover" />
-        </div>
-        <div class="w-2/3 p-6">
-          <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
-          <p class="text-gray-600 mb-2">{tutor.education}</p>
-          <p class="mb-2"><strong>Subjects:</strong> {tutor.subjects.join(", ")}</p>
-          <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
-          <p>{tutor.bio}</p>
-        </div>
+  <div class="mb-12">
+    {#if tutors.length > 0}
+      <div class="grid md:grid-cols-2 gap-8">
+        {#each tutors as tutor (tutor.id)}
+          <div class="bg-white rounded-lg overflow-hidden shadow-md flex">
+            <div class="w-1/3">
+              <img src={tutor.image} alt={tutor.name} class="w-full h-full object-cover" />
+            </div>
+            <div class="w-2/3 p-6">
+              <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
+              <p class="text-gray-600 mb-2">{tutor.education}</p>
+              <p class="mb-2"><strong>Subjects:</strong> {tutor.subjects.join(", ")}</p>
+              <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
+              <p>{tutor.bio}</p>
+            </div>
+          </div>
+        {/each}
       </div>
-    {/each}
+    {:else}
+      <div class="bg-white rounded-lg p-8 text-center shadow-md">
+        <div class="text-5xl mb-4">👩‍🏫</div>
+        <h3 class="text-2xl font-bold mb-2">No Tutors Available</h3>
+        <p class="text-gray-600 mb-4">Our team of expert tutors will be added soon.</p>
+        <p class="text-sm text-gray-500">Administrators can use the admin access to add tutors.</p>
+      </div>
+    {/if}
   </div>
 
   <!-- Call to Action -->
@@ -354,7 +319,7 @@
         <div class="flex items-center mb-4">
           <div class="text-yellow-400 text-2xl">★★★★★</div>
         </div>
-        <p class="italic mb-4">"Dr. Johnson helped me go from struggling with calculus to acing my AP exam. Her patience and clear explanations made all the difference."</p>
+        <p class="italic mb-4">"My tutor helped me go from struggling with calculus to acing my AP exam. Their patience and clear explanations made all the difference."</p>
         <p class="font-bold">- Alex T., High School Senior</p>
       </div>
 
@@ -362,7 +327,7 @@
         <div class="flex items-center mb-4">
           <div class="text-yellow-400 text-2xl">★★★★★</div>
         </div>
-        <p class="italic mb-4">"Prof. Chen's biology tutoring helped me understand complex concepts that my textbooks couldn't explain. He made learning fun and interesting!"</p>
+        <p class="italic mb-4">"The biology tutoring helped me understand complex concepts that my textbooks couldn't explain. They made learning fun and interesting!"</p>
         <p class="font-bold">- Maya R., College Freshman</p>
       </div>
 
@@ -370,7 +335,7 @@
         <div class="flex items-center mb-4">
           <div class="text-yellow-400 text-2xl">★★★★★</div>
         </div>
-        <p class="italic mb-4">"David's programming lessons were exactly what I needed to switch careers into tech. He explains coding in a way that finally made sense to me."</p>
+        <p class="italic mb-4">"The programming lessons were exactly what I needed to switch careers into tech. My tutor explains coding in a way that finally made sense to me."</p>
         <p class="font-bold">- Jamie K., Career Changer</p>
       </div>
     </div>
