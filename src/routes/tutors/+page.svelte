@@ -31,10 +31,56 @@
           const data = doc.data();
           console.log("Document ID:", doc.id);
           console.log("Document data:", data);
+          console.log("Subjects type:", typeof data.subjects, "Value:", data.subjects);
+          
+          // Handle different ways subjects might be stored in Firestore
+          let formattedSubjects = [];
+          
+          if (Array.isArray(data.subjects)) {
+            // Handle regular array
+            formattedSubjects = [...data.subjects];
+            console.log("Handled as array:", formattedSubjects);
+          } else if (typeof data.subjects === 'string') {
+            // Handle string format
+            formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+            console.log("Handled as string:", formattedSubjects);
+          } else if (data.subjects && typeof data.subjects === 'object') {
+            // Handle object format (Firebase often converts arrays to objects with numeric keys)
+            try {
+              // Try to extract values and convert back to array
+              formattedSubjects = Object.values(data.subjects);
+              console.log("Handled as object:", formattedSubjects);
+            } catch (e) {
+              console.error("Error processing subjects as object:", e);
+              formattedSubjects = [];
+            }
+          } else if (data.subject) {
+            // Check if the field name might be singular instead of plural
+            if (typeof data.subject === 'string') {
+              formattedSubjects = [data.subject];
+            } else if (Array.isArray(data.subject)) {
+              formattedSubjects = [...data.subject];
+            }
+            console.log("Used singular 'subject' field:", formattedSubjects);
+          } else {
+            console.log("No subjects data found");
+          }
+          
+          // Ensure we always have a valid array even if processing failed
+          if (!Array.isArray(formattedSubjects)) {
+            console.warn("Subjects is not an array after processing, defaulting to empty array");
+            formattedSubjects = [];
+          }
+          
+          // For safety, filter out any non-string values
+          formattedSubjects = formattedSubjects.filter(s => typeof s === 'string');
+          
+          console.log("Final formatted subjects:", formattedSubjects);
+          
           return {
             id: doc.id,
             name: data.name || "Unknown",
-            subjects: Array.isArray(data.subjects) ? data.subjects : [],
+            subjects: formattedSubjects,
             education: data.education || "",
             experience: data.experience || "",
             bio: data.bio || "",
@@ -107,10 +153,22 @@
       const querySnapshot = await getDocs(tutorsCollection);
       tutors = querySnapshot.docs.map(doc => {
         const data = doc.data();
+        
+        // Handle different ways subjects might be stored in Firestore
+        let formattedSubjects = [];
+        if (Array.isArray(data.subjects)) {
+          formattedSubjects = data.subjects;
+        } else if (typeof data.subjects === 'string') {
+          formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (data.subjects && typeof data.subjects === 'object') {
+          // If it's stored as an object with numeric keys (Firebase sometimes does this)
+          formattedSubjects = Object.values(data.subjects);
+        }
+        
         return {
           id: doc.id,
           name: data.name || "Unknown",
-          subjects: Array.isArray(data.subjects) ? data.subjects : [],
+          subjects: formattedSubjects,
           education: data.education || "",
           experience: data.experience || "",
           bio: data.bio || "",
@@ -170,6 +228,72 @@
   <!-- Featured Tutors -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
+    <button 
+      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
+      on:click={() => {
+        console.log('Debug: Manual fetch attempt');
+        loading = true;
+        error = null;
+        
+        // Attempt to fetch again
+        const fetchData = async () => {
+          try {
+            const tutorsCollection = collection(db, "tutors");
+            const querySnapshot = await getDocs(tutorsCollection);
+            console.log("Manual fetch - docs found:", querySnapshot.size);
+            
+            querySnapshot.forEach(doc => {
+              const data = doc.data();
+              console.log("Document ID:", doc.id);
+              console.log("Document data:", JSON.stringify(data, null, 2));
+              console.log("Subjects (type):", typeof data.subjects);
+              console.log("Subjects (value):", data.subjects);
+              if (data.subjects) {
+                console.log("Is Array:", Array.isArray(data.subjects));
+                console.log("Keys:", Object.keys(data.subjects));
+              }
+            });
+            
+            // Apply our enhanced subjects processing
+            tutors = querySnapshot.docs.map(doc => {
+              const data = doc.data();
+              
+              // Handle different ways subjects might be stored in Firestore
+              let formattedSubjects = [];
+              if (Array.isArray(data.subjects)) {
+                formattedSubjects = data.subjects;
+              } else if (typeof data.subjects === 'string') {
+                formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+              } else if (data.subjects && typeof data.subjects === 'object') {
+                // If it's stored as an object with numeric keys (Firebase sometimes does this)
+                formattedSubjects = Object.values(data.subjects);
+              }
+              
+              console.log("Formatted subjects:", formattedSubjects);
+              
+              return {
+                id: doc.id,
+                name: data.name || "Unknown",
+                subjects: formattedSubjects,
+                education: data.education || "",
+                experience: data.experience || "",
+                bio: data.bio || "",
+                image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+              };
+            });
+            
+            loading = false;
+          } catch (err) {
+            console.error("Manual fetch error:", err);
+            error = err.message || "Failed to load tutors";
+            loading = false;
+          }
+        };
+        
+        fetchData();
+      }}>
+      Refresh Data
+    </button>
   </div>
 
   <!-- Inline Add Tutor Form -->
@@ -275,7 +399,14 @@
             <div class="w-2/3 p-6">
               <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
               <p class="text-gray-600 mb-2">{tutor.education}</p>
-              <p class="mb-2"><strong>Subjects:</strong> {tutor.subjects.join(", ")}</p>
+              <p class="mb-2">
+                <strong>Subjects:</strong> 
+                {#if tutor.subjects && tutor.subjects.length > 0}
+                  {tutor.subjects.join(", ")}
+                {:else}
+                  Not specified
+                {/if}
+              </p>
               <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
               <p>{tutor.bio}</p>
             </div>
