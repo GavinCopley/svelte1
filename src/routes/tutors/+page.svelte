@@ -102,7 +102,124 @@
     }
   });
 
-  // Form-related code has been removed as per requirement to remove the ability to add tutors from this page
+  // Form state for adding new tutors
+  let showForm = false;
+  
+  // Initialize form data
+  let form = {
+    name: '',
+    subjects: '',
+    education: '',
+    experience: '',
+    bio: '',
+    image: ''
+  };
+  
+  // Form validation errors
+  type FormErrors = {
+    name?: string;
+    subjects?: string;
+    education?: string;
+    experience?: string;
+    bio?: string;
+    image?: string;
+  };
+  let errors: FormErrors = {};
+  
+  // Reset form to initial state
+  function resetForm() {
+    form = { 
+      name: '',
+      subjects: '',
+      education: '',
+      experience: '',
+      bio: '',
+      image: ''
+    };
+    errors = {};
+  }
+  
+  // Toggle form visibility
+  function toggleForm() {
+    showForm = !showForm;
+    if (!showForm) {
+      resetForm();
+    }
+  }
+  
+  // Validate form data
+  function validateForm() {
+    errors = {};
+    if (!form.name.trim()) errors.name = 'Name is required';
+    if (!form.subjects.trim()) errors.subjects = 'At least one subject is required';
+    if (!form.education.trim()) errors.education = 'Education is required';
+    if (!form.experience.trim()) errors.experience = 'Experience is required';
+    if (!form.bio.trim()) errors.bio = 'Bio is required';
+    if (form.image && !/^https?:\/\/\S+$/i.test(form.image)) {
+      errors.image = 'Image URL must be valid (or leave blank)';
+    }
+    return Object.keys(errors).length === 0;
+  }
+  
+  // Add new tutor to Firestore
+  async function addTutor() {
+    if (!validateForm()) return;
+    
+    try {
+      // Format tutor data for Firestore
+      const newTutor = {
+        name: form.name.trim(),
+        subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
+        education: form.education.trim(),
+        experience: form.experience.trim(),
+        bio: form.bio.trim(),
+        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
+      };
+      
+      console.log("Adding new tutor to Firestore:", newTutor);
+      
+      // Add to Firestore
+      const tutorsCollection = collection(db, "tutors");
+      const docRef = await addDoc(tutorsCollection, newTutor);
+      console.log("Document written with ID:", docRef.id);
+      
+      // Refresh tutors list
+      const querySnapshot = await getDocs(tutorsCollection);
+      tutors = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Process subjects data
+        let formattedSubjects = [];
+        if (Array.isArray(data.subjects)) {
+          formattedSubjects = [...data.subjects];
+        } else if (typeof data.subjects === 'string') {
+          formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (data.subjects && typeof data.subjects === 'object') {
+          formattedSubjects = Object.values(data.subjects);
+        }
+        
+        return {
+          id: doc.id,
+          name: data.name || "Unknown",
+          subjects: formattedSubjects,
+          education: data.education || "",
+          experience: data.experience || "",
+          bio: data.bio || "",
+          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+        };
+      });
+      
+      // Close form and reset
+      showForm = false;
+      resetForm();
+      
+      // Show success notification
+      alert("Tutor added successfully!");
+    } catch (err) {
+      console.error('Error adding tutor:', err);
+      alert('Failed to add tutor: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  }
 </script>
 
 <svelte:head>
@@ -147,75 +264,237 @@
   <!-- Featured Tutors -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-3xl font-bold text-[#151f54]">Featured Tutors</h2>
-    <button 
-      class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
-      on:click={() => {
-        console.log('Debug: Manual fetch attempt');
-        loading = true;
-        error = null;
-        
-        // Attempt to fetch again
-        const fetchData = async () => {
-          try {
-            const tutorsCollection = collection(db, "tutors");
-            const querySnapshot = await getDocs(tutorsCollection);
-            console.log("Manual fetch - docs found:", querySnapshot.size);
-            
-            querySnapshot.forEach(doc => {
-              const data = doc.data();
-              console.log("Document ID:", doc.id);
-              console.log("Document data:", JSON.stringify(data, null, 2));
-              console.log("Subjects (type):", typeof data.subjects);
-              console.log("Subjects (value):", data.subjects);
-              if (data.subjects) {
-                console.log("Is Array:", Array.isArray(data.subjects));
-                console.log("Keys:", Object.keys(data.subjects));
-              }
-            });
-            
-            // Apply our enhanced subjects processing
-            tutors = querySnapshot.docs.map(doc => {
-              const data = doc.data();
+    <div class="flex space-x-3">
+      <!-- Add New Tutor Button -->
+      <button 
+        class="bg-[#151f54] hover:bg-[#212d6e] text-white font-semibold py-2 px-4 rounded shadow text-sm flex items-center"
+        on:click={toggleForm}>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        {showForm ? 'Cancel' : 'Add New Tutor'}
+      </button>
+      
+      <!-- Refresh Data Button -->
+      <button 
+        class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow text-sm"
+        on:click={() => {
+          console.log('Debug: Manual fetch attempt');
+          loading = true;
+          error = null;
+          
+          // Attempt to fetch again
+          const fetchData = async () => {
+            try {
+              const tutorsCollection = collection(db, "tutors");
+              const querySnapshot = await getDocs(tutorsCollection);
+              console.log("Manual fetch - docs found:", querySnapshot.size);
               
-              // Handle different ways subjects might be stored in Firestore
-              let formattedSubjects = [];
-              if (Array.isArray(data.subjects)) {
-                formattedSubjects = data.subjects;
-              } else if (typeof data.subjects === 'string') {
-                formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
-              } else if (data.subjects && typeof data.subjects === 'object') {
-                // If it's stored as an object with numeric keys (Firebase sometimes does this)
-                formattedSubjects = Object.values(data.subjects);
-              }
+              querySnapshot.forEach(doc => {
+                const data = doc.data();
+                console.log("Document ID:", doc.id);
+                console.log("Document data:", JSON.stringify(data, null, 2));
+                console.log("Subjects (type):", typeof data.subjects);
+                console.log("Subjects (value):", data.subjects);
+                if (data.subjects) {
+                  console.log("Is Array:", Array.isArray(data.subjects));
+                  console.log("Keys:", Object.keys(data.subjects));
+                }
+              });
               
-              console.log("Formatted subjects:", formattedSubjects);
+              // Apply our enhanced subjects processing
+              tutors = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                
+                // Handle different ways subjects might be stored in Firestore
+                let formattedSubjects = [];
+                if (Array.isArray(data.subjects)) {
+                  formattedSubjects = data.subjects;
+                } else if (typeof data.subjects === 'string') {
+                  formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+                } else if (data.subjects && typeof data.subjects === 'object') {
+                  // If it's stored as an object with numeric keys (Firebase sometimes does this)
+                  formattedSubjects = Object.values(data.subjects);
+                }
+                
+                console.log("Formatted subjects:", formattedSubjects);
+                
+                return {
+                  id: doc.id,
+                  name: data.name || "Unknown",
+                  subjects: formattedSubjects,
+                  education: data.education || "",
+                  experience: data.experience || "",
+                  bio: data.bio || "",
+                  image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+                };
+              });
               
-              return {
-                id: doc.id,
-                name: data.name || "Unknown",
-                subjects: formattedSubjects,
-                education: data.education || "",
-                experience: data.experience || "",
-                bio: data.bio || "",
-                image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-              };
-            });
-            
-            loading = false;
-          } catch (err) {
-            console.error("Manual fetch error:", err);
-            error = err instanceof Error ? err.message : "Failed to load tutors";
-            loading = false;
-          }
-        };
-        
-        fetchData();
-      }}>
-      Refresh Data
-    </button>
+              loading = false;
+            } catch (err) {
+              console.error("Manual fetch error:", err);
+              error = err instanceof Error ? err.message : "Failed to load tutors";
+              loading = false;
+            }
+          };
+          
+          fetchData();
+        }}>
+        Refresh Data
+      </button>
+    </div>
   </div>
 
-  <!-- Tutor form has been removed -->
+  <!-- Add Tutor Form -->
+  {#if showForm}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-200 transition-all duration-300">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-[#151f54]">Add New Tutor</h3>
+        <button 
+          class="text-gray-400 hover:text-gray-600"
+          on:click={toggleForm}
+          aria-label="Close form">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Name Field -->
+        <div class="form-group">
+          <label for="tutor-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+          <input
+            id="tutor-name"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="John Doe"
+            bind:value={form.name}
+          />
+          {#if errors.name}
+            <p class="mt-1 text-sm text-red-600">{errors.name}</p>
+          {/if}
+        </div>
+        
+        <!-- Subjects Field -->
+        <div class="form-group">
+          <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects (comma-separated) *</label>
+          <input
+            id="tutor-subjects"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="Mathematics, Physics, Chemistry"
+            bind:value={form.subjects}
+          />
+          {#if errors.subjects}
+            <p class="mt-1 text-sm text-red-600">{errors.subjects}</p>
+          {/if}
+        </div>
+        
+        <!-- Education Field -->
+        <div class="form-group">
+          <label for="tutor-education" class="block text-sm font-medium text-gray-700 mb-1">Education *</label>
+          <input
+            id="tutor-education"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="Ph.D. in Mathematics, MIT"
+            bind:value={form.education}
+          />
+          {#if errors.education}
+            <p class="mt-1 text-sm text-red-600">{errors.education}</p>
+          {/if}
+        </div>
+        
+        <!-- Experience Field -->
+        <div class="form-group">
+          <label for="tutor-experience" class="block text-sm font-medium text-gray-700 mb-1">Experience *</label>
+          <input
+            id="tutor-experience"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="10+ years teaching high school and college mathematics"
+            bind:value={form.experience}
+          />
+          {#if errors.experience}
+            <p class="mt-1 text-sm text-red-600">{errors.experience}</p>
+          {/if}
+        </div>
+        
+        <!-- Bio Field (Full Width) -->
+        <div class="form-group md:col-span-2">
+          <label for="tutor-bio" class="block text-sm font-medium text-gray-700 mb-1">Bio *</label>
+          <textarea
+            id="tutor-bio"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            rows="4"
+            placeholder="Brief description of the tutor's background, teaching philosophy, etc."
+            bind:value={form.bio}
+          ></textarea>
+          {#if errors.bio}
+            <p class="mt-1 text-sm text-red-600">{errors.bio}</p>
+          {/if}
+        </div>
+        
+        <!-- Image URL Field (Full Width) -->
+        <div class="form-group md:col-span-2">
+          <label for="tutor-image" class="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+          <input
+            id="tutor-image"
+            type="url"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="https://example.com/image.jpg"
+            bind:value={form.image}
+          />
+          {#if errors.image}
+            <p class="mt-1 text-sm text-red-600">{errors.image}</p>
+          {/if}
+          <p class="mt-1 text-xs text-gray-500">If left blank, a placeholder with the tutor's initials will be used.</p>
+        </div>
+      </div>
+      
+      <!-- Tutor Preview Section -->
+      <div class="mt-6">
+        <h4 class="text-sm font-medium text-gray-700 mb-2">Preview</h4>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div class="flex flex-col md:flex-row">
+            <div class="md:w-1/3 aspect-square">
+              <img
+                src={form.image || `https://placehold.co/400x400?text=${encodeURIComponent((form.name || 'New Tutor').split(' ').map(n=>n[0]||'').join('').toUpperCase())}`}
+                alt="Tutor preview"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="p-4 md:w-2/3">
+              <h3 class="text-xl font-bold">{form.name || 'Tutor Name'}</h3>
+              <p class="text-gray-600">{form.education || 'Education'}</p>
+              <p class="mt-2">
+                <strong>Subjects:</strong> {form.subjects || 'No subjects specified'}
+              </p>
+              <p class="mt-1">
+                <strong>Experience:</strong> {form.experience || 'No experience specified'}
+              </p>
+              <p class="mt-2 text-sm">{form.bio || 'No bio provided yet.'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Form Actions -->
+      <div class="mt-6 flex justify-end space-x-3">
+        <button
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          on:click={toggleForm}>
+          Cancel
+        </button>
+        <button
+          class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
+          on:click={addTutor}>
+          Add Tutor
+        </button>
+      </div>
+    </div>
+  {/if}
 
   <!-- Featured Tutors Grid -->
   <div class="mb-12">
