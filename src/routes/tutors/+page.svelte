@@ -9,6 +9,11 @@
   let loading = true;
   let error: string | null = null;
   
+  // Secret code detection
+  let keyBuffer: string[] = [];
+  const secretCode = "admin1";
+  let secretActivated = false;
+  
   // Load tutors directly from Firestore with verbose logging
   onMount(async () => {
     try {
@@ -100,6 +105,46 @@
       }
       loading = false;
     }
+    
+    // Set up keyboard listener for secret code
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Skip if user is typing in an input field, textarea, or similar
+      if (event.target instanceof HTMLElement) {
+        const tagName = event.target.tagName.toLowerCase();
+        if (['input', 'textarea', 'select'].includes(tagName) || 
+            event.target.isContentEditable) {
+          return;
+        }
+      }
+      
+      // Add the pressed key to the buffer
+      keyBuffer.push(event.key.toLowerCase());
+      
+      // Keep the buffer at the same length as our secret code
+      if (keyBuffer.length > secretCode.length) {
+        keyBuffer.shift();
+      }
+      
+      // Check if the buffer matches our secret code
+      const currentInput = keyBuffer.join('');
+      if (currentInput === secretCode) {
+        console.log('Secret admin code activated');
+        secretActivated = true;
+        showForm = true;
+        
+        // Visual feedback animation
+        showSecretCodeFeedback();
+        
+        // Reset the buffer
+        keyBuffer = [];
+      }
+    };
+    
+    // Add and later remove the event listener
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
   });
 
   // Form state for adding new tutors
@@ -145,6 +190,16 @@
     if (!showForm) {
       resetForm();
     }
+  }
+  
+  // Show visual feedback when secret code is activated
+  let showSecretNotification = false;
+  function showSecretCodeFeedback() {
+    showSecretNotification = true;
+    // Auto-hide notification after 3 seconds
+    setTimeout(() => {
+      showSecretNotification = false;
+    }, 3000);
   }
   
   // Validate form data
@@ -226,7 +281,19 @@
   <title>Tutors | WiseOwl</title>
 </svelte:head>
 
-<div class="max-w-6xl mx-auto px-4">
+<!-- Secret Code Notification -->
+{#if showSecretNotification}
+  <div class="fixed top-5 right-5 bg-[#151f54] text-white py-2 px-4 rounded-md shadow-lg z-50 animate-fade-in-out">
+    <div class="flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <span>Admin mode activated</span>
+    </div>
+  </div>
+{/if}
+
+<div class="max-w-6xl mx-auto px-4" class:secret-activated={secretActivated}>
   <!-- Hero Section -->
   <div class="bg-[#151f54] text-white rounded-lg p-10 mb-12 shadow-lg">
     <h1 class="text-4xl font-bold mb-4">Meet Our Expert Tutors</h1>
