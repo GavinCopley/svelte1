@@ -43,7 +43,7 @@
 </script>
 
 <svelte:head>
-    <title>Our Expert Tutors | WiseOwl</title>
+    <title>Tutors | WiseOwl</title>
 </svelte:head>
 
 <div class="max-w-6xl mx-auto px-4">
