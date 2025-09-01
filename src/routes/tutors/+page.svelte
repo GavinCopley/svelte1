@@ -15,96 +15,101 @@
   let secretActivated = false;
   
   // Load tutors directly from Firestore with verbose logging
-  onMount(async () => {
-    try {
-      loading = true;
-      console.log("Attempting to load tutors from Firestore...");
-      console.log("Firestore instance:", db ? "Available" : "Not Available");
-      
-      // Direct Firestore access for debugging
-      const tutorsCollection = collection(db, "tutors");
-      console.log("Collection reference created:", tutorsCollection);
-      
-      const querySnapshot = await getDocs(tutorsCollection);
-      console.log("Firestore query complete. Documents found:", querySnapshot.size);
-      
-      if (querySnapshot.empty) {
-        console.log("No tutors found in collection");
-        tutors = [];
-      } else {
-        tutors = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log("Document ID:", doc.id);
-          console.log("Document data:", data);
-          console.log("Subjects type:", typeof data.subjects, "Value:", data.subjects);
-          
-          // Handle different ways subjects might be stored in Firestore
-          let formattedSubjects: string[] = [];
-          
-          if (Array.isArray(data.subjects)) {
-            // Handle regular array
-            formattedSubjects = [...data.subjects];
-            console.log("Handled as array:", formattedSubjects);
-          } else if (typeof data.subjects === 'string') {
-            // Handle string format
-            formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
-            console.log("Handled as string:", formattedSubjects);
-          } else if (data.subjects && typeof data.subjects === 'object') {
-            // Handle object format (Firebase often converts arrays to objects with numeric keys)
-            try {
-              // Try to extract values and convert back to array
-              formattedSubjects = Object.values(data.subjects);
-              console.log("Handled as object:", formattedSubjects);
-            } catch (e) {
-              console.error("Error processing subjects as object:", e);
+  onMount(() => {
+    const loadTutors = async () => {
+      try {
+        loading = true;
+        console.log("Attempting to load tutors from Firestore...");
+        console.log("Firestore instance:", db ? "Available" : "Not Available");
+        
+        // Direct Firestore access for debugging
+        const tutorsCollection = collection(db, "tutors");
+        console.log("Collection reference created:", tutorsCollection);
+        
+        const querySnapshot = await getDocs(tutorsCollection);
+        console.log("Firestore query complete. Documents found:", querySnapshot.size);
+        
+        if (querySnapshot.empty) {
+          console.log("No tutors found in collection");
+          tutors = [];
+        } else {
+          tutors = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            console.log("Document ID:", doc.id);
+            console.log("Document data:", data);
+            console.log("Subjects type:", typeof data.subjects, "Value:", data.subjects);
+            
+            // Handle different ways subjects might be stored in Firestore
+            let formattedSubjects: string[] = [];
+            
+            if (Array.isArray(data.subjects)) {
+              // Handle regular array
+              formattedSubjects = [...data.subjects];
+              console.log("Handled as array:", formattedSubjects);
+            } else if (typeof data.subjects === 'string') {
+              // Handle string format
+              formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+              console.log("Handled as string:", formattedSubjects);
+            } else if (data.subjects && typeof data.subjects === 'object') {
+              // Handle object format (Firebase often converts arrays to objects with numeric keys)
+              try {
+                // Try to extract values and convert back to array
+                formattedSubjects = Object.values(data.subjects);
+                console.log("Handled as object:", formattedSubjects);
+              } catch (e) {
+                console.error("Error processing subjects as object:", e);
+                formattedSubjects = [];
+              }
+            } else if (data.subject) {
+              // Check if the field name might be singular instead of plural
+              if (typeof data.subject === 'string') {
+                formattedSubjects = [data.subject];
+              } else if (Array.isArray(data.subject)) {
+                formattedSubjects = [...data.subject];
+              }
+              console.log("Used singular 'subject' field:", formattedSubjects);
+            } else {
+              console.log("No subjects data found");
+            }
+            
+            // Ensure we always have a valid array even if processing failed
+            if (!Array.isArray(formattedSubjects)) {
+              console.warn("Subjects is not an array after processing, defaulting to empty array");
               formattedSubjects = [];
             }
-          } else if (data.subject) {
-            // Check if the field name might be singular instead of plural
-            if (typeof data.subject === 'string') {
-              formattedSubjects = [data.subject];
-            } else if (Array.isArray(data.subject)) {
-              formattedSubjects = [...data.subject];
-            }
-            console.log("Used singular 'subject' field:", formattedSubjects);
-          } else {
-            console.log("No subjects data found");
-          }
-          
-          // Ensure we always have a valid array even if processing failed
-          if (!Array.isArray(formattedSubjects)) {
-            console.warn("Subjects is not an array after processing, defaulting to empty array");
-            formattedSubjects = [];
-          }
-          
-          // For safety, filter out any non-string values
-          formattedSubjects = formattedSubjects.filter(s => typeof s === 'string');
-          
-          console.log("Final formatted subjects:", formattedSubjects);
-          
-          return {
-            id: doc.id,
-            name: data.name || "Unknown",
-            subjects: formattedSubjects,
-            education: data.education || "",
-            experience: data.experience || "",
-            bio: data.bio || "",
-            image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-          };
-        });
-        console.log("Processed tutors data:", tutors);
+            
+            // For safety, filter out any non-string values
+            formattedSubjects = formattedSubjects.filter(s => typeof s === 'string');
+            
+            console.log("Final formatted subjects:", formattedSubjects);
+            
+            return {
+              id: doc.id,
+              name: data.name || "Unknown",
+              subjects: formattedSubjects,
+              education: data.education || "",
+              experience: data.experience || "",
+              bio: data.bio || "",
+              image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+            };
+          });
+          console.log("Processed tutors data:", tutors);
+        }
+        loading = false;
+      } catch (err) {
+        console.error("Error fetching tutors:", err);
+        if (err instanceof Error) {
+          console.error("Error details:", err.stack);
+          error = err.message || "Failed to load tutors";
+        } else {
+          error = "Failed to load tutors";
+        }
+        loading = false;
       }
-      loading = false;
-    } catch (err) {
-      console.error("Error fetching tutors:", err);
-      if (err instanceof Error) {
-        console.error("Error details:", err.stack);
-        error = err.message || "Failed to load tutors";
-      } else {
-        error = "Failed to load tutors";
-      }
-      loading = false;
-    }
+    };
+    
+    // Start loading tutors
+    loadTutors();
     
     // Set up keyboard listener for secret code
     const handleKeyPress = (event: KeyboardEvent) => {
