@@ -340,6 +340,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Debug Button (admin modal) -->
+  <div class="mb-12">
+    <button class="bg-red-500 text-white p-2" on:click={openAddTutor}>
+      Debug: Open Admin Modal
+    </button>
+  </div>
 </div>
 
 <!-- Password Modal -->
