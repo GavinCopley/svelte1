@@ -147,8 +147,9 @@
     }).filter(category => category.subjects.length > 0);
   }
   
-  // Modal state
+  // Modal states
   let modalOpen = false;
+  let subjectsModalDetailOpen = false; // Modal for viewing all subjects
   let selectedTutor: Tutor | null = null;
   let isEditing = false; // Track if we're in edit mode
   
@@ -157,6 +158,12 @@
     selectedTutor = tutor;
     modalOpen = true;
     isEditing = false; // Reset edit mode when opening modal
+  }
+  
+  // Function to open the subjects detail modal
+  function openSubjectsDetailModal(tutor: Tutor) {
+    selectedTutor = tutor;
+    subjectsModalDetailOpen = true;
   }
   
   // Secret code detection
@@ -403,6 +410,7 @@
     if (!form.education.trim()) errors.education = 'Education is required';
     if (!form.experience.trim()) errors.experience = 'Experience is required';
     if (!form.bio.trim()) errors.bio = 'Bio is required';
+    else if (form.bio.length > 500) errors.bio = 'Bio must be 500 characters or less';
     if (form.image && !/^https?:\/\/\S+$/i.test(form.image)) {
       errors.image = 'Image URL must be valid (or leave blank)';
     }
@@ -690,16 +698,23 @@
         
         <!-- Bio Field (Full Width) -->
         <div class="form-group md:col-span-2">
-          <label for="tutor-bio" class="block text-sm font-medium text-gray-700 mb-1">Bio *</label>
+          <div class="flex justify-between items-center mb-1">
+            <label for="tutor-bio" class="block text-sm font-medium text-gray-700">Bio *</label>
+            <span class={form.bio.length > 500 ? 'text-xs font-medium text-red-600' : form.bio.length > 400 ? 'text-xs font-medium text-amber-600' : 'text-xs font-medium text-green-600'}>
+              {form.bio.length}/500 characters
+            </span>
+          </div>
           <textarea
             id="tutor-bio"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            class={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54] ${form.bio.length > 500 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
             rows="4"
             placeholder="Brief description of the tutor's background, teaching philosophy, etc."
             bind:value={form.bio}
           ></textarea>
           {#if errors.bio}
             <p class="mt-1 text-sm text-red-600">{errors.bio}</p>
+          {:else if form.bio.length > 500}
+            <p class="mt-1 text-sm text-red-600">Bio exceeds the 500 character limit.</p>
           {/if}
         </div>
         
@@ -800,14 +815,29 @@
               <div class="flex-grow">
                 <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
                 <p class="text-gray-600 mb-2">{tutor.education}</p>
-                <p class="mb-2">
-                  <strong>Subjects:</strong> 
+                <div class="mb-2">
+                  <div class="flex items-center gap-1">
+                    <strong>Subjects:</strong>
+                    {#if tutor.subjects && tutor.subjects.length > 10}
+                      <button
+                        class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors"
+                        on:click|stopPropagation={() => openSubjectsDetailModal(tutor)}
+                      >
+                        Show all ({tutor.subjects.length})
+                      </button>
+                    {/if}
+                  </div>
                   {#if tutor.subjects && tutor.subjects.length > 0}
-                    {tutor.subjects.join(", ")}
+                    <div class="text-sm">
+                      {tutor.subjects.slice(0, 10).join(", ")}
+                      {#if tutor.subjects.length > 10}
+                        <span class="text-gray-500">... and {tutor.subjects.length - 10} more</span>
+                      {/if}
+                    </div>
                   {:else}
-                    Not specified
+                    <span>Not specified</span>
                   {/if}
-                </p>
+                </div>
                 <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
                 <p class="line-clamp-2 text-sm mb-3">{tutor.bio}</p>
               </div>
@@ -1118,7 +1148,54 @@
   </div>
 {/if}
 
-<style>
+<!-- All Subjects Modal -->
+{#if subjectsModalDetailOpen && selectedTutor}
+  <div class="fixed inset-0 bg-gray-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300">
+    <div class="bg-white rounded-lg shadow-2xl border border-white/20 w-full max-w-2xl max-h-[90vh] flex flex-col animate-fadeIn">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-[#151f54]">{selectedTutor.name}'s Subjects</h3>
+        <button 
+          class="text-gray-400 hover:text-gray-600"
+          on:click={() => subjectsModalDetailOpen = false}
+          aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Subjects List -->
+      <div class="overflow-y-auto custom-scrollbar p-6 flex-grow">
+        {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {#each selectedTutor.subjects as subject}
+              <div class="p-2 bg-blue-50 rounded-lg border border-blue-100 text-[#151f54] flex items-center">
+                <span class="text-sm font-medium">{subject}</span>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="text-center py-8 text-gray-500">
+            <p>This tutor has not specified any subjects.</p>
+          </div>
+        {/if}
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <button
+          class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors"
+          on:click={() => subjectsModalDetailOpen = false}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style lang="css">
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
@@ -1126,5 +1203,24 @@
 
   .animate-fadeIn {
     animation: fadeIn 0.2s ease-out forwards;
+  }
+  
+  /* Custom scrollbar styling for the subjects modal */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+    border-radius: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #a8a8a8;
   }
 </style>
