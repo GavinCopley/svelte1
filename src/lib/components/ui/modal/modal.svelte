@@ -55,13 +55,13 @@
       transition:scale={{ duration: 200, start: 0.95 }}
     >
       <!-- Header -->
-      <div class="flex items-center justify-between border-b p-4 sm:p-6">
-        <div class="text-lg font-semibold">
+      <div class="flex items-center border-b p-4 sm:p-6">
+        <div class="flex-grow text-lg font-semibold">
           <slot name="header">{title || 'Modal'}</slot>
         </div>
         <button
           type="button"
-          class="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#151f54]"
+          class="ml-2 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#151f54]"
           on:click={closeModal}
           aria-label="Close modal"
         >

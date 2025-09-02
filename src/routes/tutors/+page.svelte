@@ -1,6 +1,6 @@
 <script lang="ts"> 
   import { onMount } from 'svelte';
-  import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
+  import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
   import { db } from '$lib/firebase';
   import type { Tutor } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
@@ -13,11 +13,13 @@
   // Modal state
   let modalOpen = false;
   let selectedTutor: Tutor | null = null;
+  let isEditing = false; // Track if we're in edit mode
   
   // Function to open the tutor profile modal
   function openTutorProfile(tutor: Tutor) {
     selectedTutor = tutor;
     modalOpen = true;
+    isEditing = false; // Reset edit mode when opening modal
   }
   
   // Secret code detection
@@ -203,6 +205,7 @@
   // Close form function (since form can only be opened via secret code)
   function closeForm() {
     showForm = false;
+    isEditing = false; // Reset editing state
     resetForm();
   }
   
@@ -305,6 +308,88 @@
       alert('Failed to add tutor: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   }
+  
+  // Start editing a tutor
+  function startEditingTutor() {
+    if (selectedTutor) {
+      isEditing = true;
+      // Populate form with selected tutor data
+      form = {
+        name: selectedTutor.name,
+        subjects: selectedTutor.subjects.join(', '),
+        education: selectedTutor.education,
+        experience: selectedTutor.experience,
+        bio: selectedTutor.bio,
+        image: selectedTutor.image
+      };
+      // Close the modal
+      modalOpen = false;
+      // Show the form
+      showForm = true;
+    }
+  }
+  
+  // Update an existing tutor
+  async function updateTutor(tutorId: string) {
+    if (!validateForm()) return;
+    
+    try {
+      // Format tutor data for Firestore
+      const updatedTutor = {
+        name: form.name.trim(),
+        subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
+        education: form.education.trim(),
+        experience: form.experience.trim(),
+        bio: form.bio.trim(),
+        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
+      };
+      
+      console.log("Updating tutor in Firestore:", updatedTutor);
+      
+      // Update in Firestore
+      const tutorDocRef = doc(db, "tutors", tutorId);
+      await updateDoc(tutorDocRef, updatedTutor);
+      console.log("Document updated with ID:", tutorId);
+      
+      // Refresh tutors list
+      await refreshTutorsData();
+      
+      // Close form and reset
+      showForm = false;
+      isEditing = false;
+      resetForm();
+      
+      // Show success notification
+      alert("Tutor updated successfully!");
+    } catch (err) {
+      console.error('Error updating tutor:', err);
+      alert('Failed to update tutor: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  }
+  
+  // Delete a tutor
+  async function deleteTutor(tutorId: string) {
+    if (confirm("Are you sure you want to delete this tutor? This action cannot be undone.")) {
+      try {
+        // Delete from Firestore
+        const tutorDocRef = doc(db, "tutors", tutorId);
+        await deleteDoc(tutorDocRef);
+        console.log("Document deleted with ID:", tutorId);
+        
+        // Refresh tutors list
+        await refreshTutorsData();
+        
+        // Close modal
+        modalOpen = false;
+        
+        // Show success notification
+        alert("Tutor deleted successfully!");
+      } catch (err) {
+        console.error('Error deleting tutor:', err);
+        alert('Failed to delete tutor: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    }
+  }
 </script>
 
 <svelte:head>
@@ -366,7 +451,7 @@
   {#if showForm}
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-200 transition-all duration-300">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold text-[#151f54]">Add New Tutor</h3>
+        <h3 class="text-xl font-bold text-[#151f54]">{isEditing ? 'Edit Tutor' : 'Add New Tutor'}</h3>
         <button 
           class="text-gray-400 hover:text-gray-600"
           on:click={closeForm}
@@ -504,11 +589,19 @@
           on:click={closeForm}>
           Cancel
         </button>
-        <button
-          class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
-          on:click={addTutor}>
-          Add Tutor
-        </button>
+        {#if isEditing && selectedTutor}
+          <button
+            class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
+            on:click={() => updateTutor(selectedTutor.id)}>
+            Update Tutor
+          </button>
+        {:else}
+          <button
+            class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
+            on:click={addTutor}>
+            Add Tutor
+          </button>
+        {/if}
       </div>
     </div>
   {/if}
@@ -578,15 +671,42 @@
   {#if modalOpen && selectedTutor}
     <Modal bind:open={modalOpen}>
       <svelte:fragment slot="header">
-        <div class="flex items-center">
-          <h2 class="text-2xl font-bold text-[#151f54]">{selectedTutor.name}</h2>
-          {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
-            <span class="ml-3 px-3 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">
-              {selectedTutor.subjects[0]}
-              {#if selectedTutor.subjects.length > 1}
-                +{selectedTutor.subjects.length - 1} more
-              {/if}
-            </span>
+        <div class="flex items-center w-full">
+          <div class="flex items-center flex-grow">
+            <h2 class="text-2xl font-bold text-[#151f54]">{selectedTutor.name}</h2>
+            {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+              <span class="ml-3 px-3 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">
+                {selectedTutor.subjects[0]}
+                {#if selectedTutor.subjects.length > 1}
+                  +{selectedTutor.subjects.length - 1} more
+                {/if}
+              </span>
+            {/if}
+          </div>
+          
+          {#if secretActivated}
+            <div class="flex space-x-2">
+              <button
+                class="px-3 py-1.5 bg-amber-500 text-white rounded-md hover:bg-amber-600 flex items-center shadow-sm transition-colors"
+                on:click={startEditingTutor}
+                title="Edit Tutor"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+                <span class="font-medium text-sm">Edit</span>
+              </button>
+              <button
+                class="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center shadow-sm transition-colors"
+                on:click={() => deleteTutor(selectedTutor.id)}
+                title="Delete Tutor"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span class="font-medium text-sm">Delete</span>
+              </button>
+            </div>
           {/if}
         </div>
       </svelte:fragment>
