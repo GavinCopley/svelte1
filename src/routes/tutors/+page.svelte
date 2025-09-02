@@ -10,6 +10,143 @@
   let loading = true;
   let error: string | null = null;
   
+  // Subject selection modal
+  let subjectsModalOpen = false;
+  let searchQuery = '';
+  let selectedSubjects: string[] = [];
+  
+  // Subject categories
+  const subjectCategories = [
+    {
+      name: "AP Capstone Diploma Program",
+      subjects: ["AP Research", "AP Seminar"]
+    },
+    {
+      name: "AP Arts",
+      subjects: ["AP 2-D Art and Design", "AP 3-D Art and Design", "AP Drawing", "AP Art History", "AP Music Theory"]
+    },
+    {
+      name: "AP English",
+      subjects: ["AP English Language and Composition", "AP English Literature and Composition"]
+    },
+    {
+      name: "AP History and Social Sciences",
+      subjects: [
+        "AP African American Studies", "AP Comparative Government and Politics", "AP European History", 
+        "AP Human Geography", "AP Macroeconomics", "AP Microeconomics", "AP Psychology", 
+        "AP United States Government and Politics", "AP United States History", "AP World History: Modern"
+      ]
+    },
+    {
+      name: "AP Math and Computer Science",
+      subjects: [
+        "AP Calculus AB", "AP Calculus BC", "AP Computer Science A", 
+        "AP Computer Science Principles", "AP Precalculus", "AP Statistics"
+      ]
+    },
+    {
+      name: "AP Sciences",
+      subjects: [
+        "AP Biology", "AP Chemistry", "AP Environmental Science", "AP Physics 1: Algebra-Based",
+        "AP Physics 2: Algebra-Based", "AP Physics C: Electricity and Magnetism", "AP Physics C: Mechanics"
+      ]
+    },
+    {
+      name: "AP World Languages and Cultures",
+      subjects: [
+        "AP Chinese Language and Culture", "AP French Language and Culture", "AP German Language and Culture",
+        "AP Italian Language and Culture", "AP Japanese Language and Culture", "AP Latin",
+        "AP Spanish Language and Culture", "AP Spanish Literature and Culture"
+      ]
+    },
+    {
+      name: "High School Core Subjects",
+      subjects: [
+        "Algebra I", "Algebra II", "Geometry", "Precalculus", "Trigonometry", 
+        "English 9", "English 10", "English 11", "English 12", 
+        "Biology", "Chemistry", "Physics", "Earth Science",
+        "World History", "U.S. History", "Government/Civics", "Economics"
+      ]
+    },
+    {
+      name: "High School Electives",
+      subjects: [
+        "Creative Writing", "Journalism", "Speech and Debate", "Film Studies",
+        "Computer Science", "Web Design", "Robotics", 
+        "Psychology", "Sociology", "Personal Finance"
+      ]
+    },
+    {
+      name: "Middle School Core Subjects",
+      subjects: [
+        "6th Grade Math", "7th Grade Math", "8th Grade Math", "Pre-Algebra",
+        "6th Grade English", "7th Grade English", "8th Grade English",
+        "6th Grade Science", "7th Grade Science", "8th Grade Science",
+        "6th Grade Social Studies", "7th Grade Social Studies", "8th Grade Social Studies"
+      ]
+    },
+    {
+      name: "Middle School Electives",
+      subjects: [
+        "Beginning Band", "Choir", "Art", "Drama",
+        "Computer Applications", "Health", "Physical Education",
+        "Study Skills", "Foreign Language Introduction"
+      ]
+    },
+    {
+      name: "Elementary Subjects",
+      subjects: [
+        "Elementary Reading", "Elementary Writing", "Elementary Math",
+        "Elementary Science", "Elementary Social Studies"
+      ]
+    }
+  ];
+  
+  // Function to handle subject selection
+  function toggleSubject(subject: string) {
+    const index = selectedSubjects.indexOf(subject);
+    if (index === -1) {
+      selectedSubjects = [...selectedSubjects, subject];
+    } else {
+      selectedSubjects = selectedSubjects.filter(s => s !== subject);
+    }
+  }
+  
+  // Function to save selected subjects
+  function saveSelectedSubjects() {
+    form.subjects = selectedSubjects.join(', ');
+    subjectsModalOpen = false;
+  }
+  
+  // Function to open subjects modal and initialize selected subjects
+  function openSubjectsModal() {
+    // Parse existing subjects from form
+    if (form.subjects) {
+      selectedSubjects = form.subjects.split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      selectedSubjects = [];
+    }
+    searchQuery = '';
+    subjectsModalOpen = true;
+  }
+  
+  // Function to filter subjects based on search query
+  function getFilteredCategories() {
+    if (!searchQuery.trim()) {
+      return subjectCategories;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return subjectCategories.map(category => {
+      return {
+        name: category.name,
+        subjects: category.subjects.filter(
+          subject => subject.toLowerCase().includes(query)
+        )
+      };
+    }).filter(category => category.subjects.length > 0);
+  }
+  
   // Modal state
   let modalOpen = false;
   let selectedTutor: Tutor | null = null;
@@ -481,13 +618,30 @@
         <!-- Subjects Field -->
         <div class="form-group">
           <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects (comma-separated) *</label>
-          <input
-            id="tutor-subjects"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
-            placeholder="Mathematics, Physics, Chemistry"
-            bind:value={form.subjects}
-          />
+          <div class="flex space-x-2">
+            <div class="flex-grow relative">
+              <input
+                id="tutor-subjects"
+                type="text"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+                placeholder="Mathematics, Physics, Chemistry"
+                bind:value={form.subjects}
+              />
+            </div>
+            <button
+              type="button"
+              class="px-3 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm text-sm whitespace-nowrap flex-shrink-0"
+              on:click={openSubjectsModal}
+            >
+              <span class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                  <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                </svg>
+                Select from class list
+              </span>
+            </button>
+          </div>
           {#if errors.subjects}
             <p class="mt-1 text-sm text-red-600">{errors.subjects}</p>
           {/if}
@@ -816,3 +970,111 @@
     </div>
   </div>
 </div>
+
+<!-- Subject Selection Modal -->
+{#if subjectsModalOpen}
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-[#151f54]">Select Subjects</h3>
+        <button 
+          class="text-gray-400 hover:text-gray-600"
+          on:click={() => subjectsModalOpen = false}
+          aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="Search subjects..."
+            bind:value={searchQuery}
+          />
+        </div>
+        
+        <div class="mt-2 flex flex-wrap gap-2">
+          {#each selectedSubjects as subject}
+            <div class="bg-[#151f54] text-white text-xs font-medium px-2 py-1 rounded-full flex items-center">
+              {subject}
+              <button 
+                class="ml-1 focus:outline-none" 
+                on:click={() => toggleSubject(subject)}
+                aria-label="Remove {subject}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          {/each}
+        </div>
+      </div>
+      
+      <!-- Subject Categories -->
+      <div class="overflow-y-auto flex-grow p-6">
+        {#each getFilteredCategories() as category}
+          {#if category.subjects.length > 0}
+            <div class="mb-6">
+              <h4 class="text-lg font-semibold text-[#151f54] mb-2">{category.name}</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {#each category.subjects as subject}
+                  <label class="flex items-center space-x-2 p-2 rounded hover:bg-gray-100">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedSubjects.includes(subject)}
+                      on:change={() => toggleSubject(subject)}
+                      class="rounded text-[#151f54] focus:ring-[#151f54]"
+                    />
+                    <span class="text-sm">{subject}</span>
+                  </label>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        {/each}
+        
+        {#if getFilteredCategories().length === 0 || getFilteredCategories().every(cat => cat.subjects.length === 0)}
+          <div class="text-center py-10 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="mt-2 text-lg font-medium">No subjects found matching your search</p>
+            <p class="mt-1">Try a different search term or clear the search</p>
+          </div>
+        {/if}
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-between">
+        <div>
+          <span class="text-sm text-gray-600">{selectedSubjects.length} subjects selected</span>
+        </div>
+        <div class="flex space-x-2">
+          <button
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            on:click={() => subjectsModalOpen = false}
+          >
+            Cancel
+          </button>
+          <button
+            class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e]"
+            on:click={saveSelectedSubjects}
+          >
+            Apply Selection
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
