@@ -617,16 +617,29 @@
         
         <!-- Subjects Field -->
         <div class="form-group">
-          <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects (comma-separated) *</label>
+          <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects *</label>
           <div class="flex space-x-2">
             <div class="flex-grow relative">
-              <input
-                id="tutor-subjects"
-                type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
-                placeholder="Mathematics, Physics, Chemistry"
-                bind:value={form.subjects}
-              />
+              <div 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto cursor-default"
+                aria-readonly="true"
+                aria-label="Selected subjects"
+              >
+                {#if form.subjects}
+                  <div class="flex flex-wrap gap-1">
+                    {#each form.subjects.split(',').map(s => s.trim()).filter(Boolean) as subject}
+                      <span class="bg-[#e8eaf6] text-[#151f54] text-xs px-2 py-1 rounded-full inline-block mb-1">
+                        {subject}
+                      </span>
+                    {/each}
+                  </div>
+                  <div class="mt-1 text-xs text-gray-500">
+                    {form.subjects.split(',').filter(Boolean).length} subject{form.subjects.split(',').filter(Boolean).length !== 1 ? 's' : ''} selected
+                  </div>
+                {:else}
+                  <span class="text-gray-400">No subjects selected</span>
+                {/if}
+              </div>
             </div>
             <button
               type="button"
@@ -638,7 +651,7 @@
                   <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                   <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
                 </svg>
-                Select from class list
+                Select subjects
               </span>
             </button>
           </div>
@@ -1004,20 +1017,37 @@
           />
         </div>
         
-        <div class="mt-2 flex flex-wrap gap-2">
-          {#each selectedSubjects as subject}
-            <div class="bg-[#151f54] text-white text-xs font-medium px-2 py-1 rounded-full flex items-center">
-              {subject}
-              <button 
-                class="ml-1 focus:outline-none" 
-                on:click={() => toggleSubject(subject)}
-                aria-label="Remove {subject}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
+        <div class="mt-2">
+          {#if selectedSubjects.length > 0}
+            <div class="mb-1 flex items-center justify-between">
+              <span class="text-sm text-gray-600 font-medium">{selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''} selected</span>
+              {#if selectedSubjects.length > 0}
+                <button 
+                  class="text-xs text-[#151f54] hover:text-red-600 underline"
+                  on:click={() => selectedSubjects = []}
+                >
+                  Clear all
+                </button>
+              {/if}
             </div>
-          {/each}
+            <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-1 border border-gray-100 rounded-md">
+              {#each selectedSubjects as subject}
+                <div class="bg-[#151f54] text-white text-xs font-medium px-2 py-1 rounded-full flex items-center group">
+                  {subject}
+                  <button 
+                    class="ml-1 focus:outline-none opacity-70 group-hover:opacity-100" 
+                    on:click={() => toggleSubject(subject)}
+                    aria-label="Remove {subject}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="text-sm text-gray-500">No subjects selected yet. Choose from the categories below.</p>
+          {/if}
         </div>
       </div>
       
@@ -1029,14 +1059,17 @@
               <h4 class="text-lg font-semibold text-[#151f54] mb-2">{category.name}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {#each category.subjects as subject}
-                  <label class="flex items-center space-x-2 p-2 rounded hover:bg-gray-100">
+                  <label 
+                    class="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 cursor-pointer {selectedSubjects.includes(subject) ? 'bg-blue-50 border border-blue-200' : ''}" 
+                    title={subject}
+                  >
                     <input 
                       type="checkbox" 
                       checked={selectedSubjects.includes(subject)}
                       on:change={() => toggleSubject(subject)}
                       class="rounded text-[#151f54] focus:ring-[#151f54]"
                     />
-                    <span class="text-sm">{subject}</span>
+                    <span class="text-sm {selectedSubjects.includes(subject) ? 'font-medium text-[#151f54]' : ''}">{subject}</span>
                   </label>
                 {/each}
               </div>
