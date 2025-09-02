@@ -618,41 +618,39 @@
         <!-- Subjects Field -->
         <div class="form-group">
           <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects *</label>
-          <div class="flex space-x-2">
+          <div class="flex items-center space-x-2">
             <div class="flex-grow relative">
               <div 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto cursor-default"
+                class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto cursor-not-allowed select-none flex flex-col justify-center"
                 aria-readonly="true"
                 aria-label="Selected subjects"
+                on:click={openSubjectsModal}
               >
                 {#if form.subjects}
                   <div class="flex flex-wrap gap-1">
                     {#each form.subjects.split(',').map(s => s.trim()).filter(Boolean) as subject}
-                      <span class="bg-[#e8eaf6] text-[#151f54] text-xs px-2 py-1 rounded-full inline-block mb-1">
+                      <span class="bg-[#e8eaf6] text-[#151f54] text-xs px-2 py-1 rounded-full inline-block mb-1 shadow-sm">
                         {subject}
                       </span>
                     {/each}
                   </div>
                   <div class="mt-1 text-xs text-gray-500">
-                    {form.subjects.split(',').filter(Boolean).length} subject{form.subjects.split(',').filter(Boolean).length !== 1 ? 's' : ''} selected
+                    {form.subjects.split(',').filter(Boolean).length} subject{form.subjects.split(',').filter(Boolean).length !== 1 ? 's' : ''} selected • Click "Select Classes" to modify
                   </div>
                 {:else}
-                  <span class="text-gray-400">No subjects selected</span>
+                  <span class="text-gray-400">No subjects selected • Click "Select Classes" button to choose subjects</span>
                 {/if}
               </div>
             </div>
             <button
               type="button"
-              class="px-3 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm text-sm whitespace-nowrap flex-shrink-0"
+              class="self-center h-8 px-2 flex items-center bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm text-xs whitespace-nowrap flex-shrink-0 transition-colors"
               on:click={openSubjectsModal}
             >
-              <span class="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                  <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
-                </svg>
-                Select subjects
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Select
             </button>
           </div>
           {#if errors.subjects}
@@ -986,8 +984,8 @@
 
 <!-- Subject Selection Modal -->
 {#if subjectsModalOpen}
-  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+  <div class="fixed inset-0 bg-gray-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300">
+    <div class="bg-white rounded-lg shadow-2xl border border-white/20 w-full max-w-4xl max-h-[90vh] flex flex-col animate-fadeIn">
       <!-- Modal Header -->
       <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h3 class="text-xl font-bold text-[#151f54]">Select Subjects</h3>
@@ -1030,12 +1028,12 @@
                 </button>
               {/if}
             </div>
-            <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-1 border border-gray-100 rounded-md">
+            <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border border-gray-200 rounded-md bg-gray-50">
               {#each selectedSubjects as subject}
-                <div class="bg-[#151f54] text-white text-xs font-medium px-2 py-1 rounded-full flex items-center group">
+                <div class="bg-[#151f54] text-white text-xs font-medium px-2 py-1 rounded-full flex items-center group shadow-sm">
                   {subject}
                   <button 
-                    class="ml-1 focus:outline-none opacity-70 group-hover:opacity-100" 
+                    class="ml-1 focus:outline-none opacity-70 group-hover:opacity-100 hover:bg-[#0f183e] rounded-full" 
                     on:click={() => toggleSubject(subject)}
                     aria-label="Remove {subject}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -1090,18 +1088,26 @@
       
       <!-- Modal Footer -->
       <div class="px-6 py-4 border-t border-gray-200 flex justify-between">
-        <div>
+        <div class="flex items-center space-x-2">
           <span class="text-sm text-gray-600">{selectedSubjects.length} subjects selected</span>
+          {#if selectedSubjects.length > 0}
+            <button
+              class="text-xs text-red-600 hover:text-red-800 underline"
+              on:click={() => selectedSubjects = []}
+            >
+              Clear all
+            </button>
+          {/if}
         </div>
         <div class="flex space-x-2">
           <button
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            class="h-9 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center transition-colors"
             on:click={() => subjectsModalOpen = false}
           >
             Cancel
           </button>
           <button
-            class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e]"
+            class="h-9 px-4 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] flex items-center transition-colors"
             on:click={saveSelectedSubjects}
           >
             Apply Selection
@@ -1111,3 +1117,14 @@
     </div>
   </div>
 {/if}
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+</style>

@@ -45,13 +45,13 @@
   >
     <!-- Backdrop -->
     <div 
-      class="fixed inset-0 bg-black/50" 
+      class="fixed inset-0 bg-gray-900/70 backdrop-blur-md" 
       transition:fade={{ duration: 150 }}
     ></div>
     
     <!-- Modal -->
     <div
-      class="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl"
+      class="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-2xl border border-white/20"
       transition:scale={{ duration: 200, start: 0.95 }}
     >
       <!-- Header -->
