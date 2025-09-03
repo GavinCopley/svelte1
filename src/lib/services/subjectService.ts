@@ -16,7 +16,24 @@ const COLLECTION_NAME = 'subjects';
 export const subjectService = {
   // Get all subjects
   getAllSubjects: async (): Promise<Subject[]> => {
-    return await firestoreDB.getCollection(COLLECTION_NAME) as Subject[];
+    try {
+      const subjects = await firestoreDB.getCollection(COLLECTION_NAME) as Subject[];
+      console.log(`Retrieved ${subjects.length} subjects successfully`);
+      
+      // Normalize and validate subject data
+      return subjects.map(subject => ({
+        id: subject.id,
+        name: subject.name || 'Unnamed Subject',
+        description: subject.description || 'No description available',
+        category: subject.category || 'Other',
+        level: subject.level || '',
+        imageUrl: subject.imageUrl || ''
+      }));
+    } catch (error) {
+      console.error('Error in subjectService.getAllSubjects:', error);
+      // Return empty array as fallback
+      return [];
+    }
   },
   
   // Get a single subject by ID

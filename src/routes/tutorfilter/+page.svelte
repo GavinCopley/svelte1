@@ -119,7 +119,7 @@
   }
   
   // Function to open the subjects detail modal
-  function openSubjectsDetail(tutor: Tutor, event: MouseEvent) {
+  function openSubjectsDetail(tutor: Tutor, event: MouseEvent | KeyboardEvent) {
     event.stopPropagation(); // Prevent the main card click from firing
     selectedTutor = tutor;
     subjectsModalOpen = true;
@@ -342,10 +342,11 @@
               {#each popularSubjects as { subject, count }}
                 <button
                   class="text-xs px-3 py-1.5 rounded-full border transition-colors"
-                  class:bg-[#151f54]:={selectedSubjects.includes(subject)}
-                  class:text-white={selectedSubjects.includes(subject)}
-                  class:border-[#151f54]={selectedSubjects.includes(subject)}
+                  class:bg-blue-100={selectedSubjects.includes(subject)}
+                  class:text-blue-700={selectedSubjects.includes(subject)}
+                  class:border-blue-300={selectedSubjects.includes(subject)}
                   class:bg-gray-50={!selectedSubjects.includes(subject)}
+                  class:text-gray-700={!selectedSubjects.includes(subject)}
                   class:hover:bg-gray-100={!selectedSubjects.includes(subject)}
                   class:border-gray-300={!selectedSubjects.includes(subject)}
                   on:click={() => toggleSubjectFilter(subject)}
@@ -369,7 +370,7 @@
                         checked={selectedSubjects.includes(subject)}
                         on:change={() => toggleSubjectFilter(subject)}
                       />
-                      <span class="ml-2 text-sm text-gray-700">{subject}</span>
+                      <span class="ml-2 text-sm {selectedSubjects.includes(subject) ? 'text-blue-700 font-medium' : 'text-gray-700'}">{subject}</span>
                     </label>
                   {/each}
                 </div>
@@ -389,6 +390,7 @@
                   <button
                     class="ml-1 focus:outline-none hover:text-red-600"
                     on:click={() => toggleSubjectFilter(subject)}
+                    aria-label={`Remove ${subject} filter`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -550,9 +552,9 @@
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center space-x-3">
             <h2 class="text-2xl font-bold text-[#151f54]">{selectedTutor.name}</h2>
-            {#if selectedSubjects.some(s => selectedTutor.subjects.includes(s))}
+            {#if selectedSubjects.some(s => selectedTutor!.subjects.includes(s))}
               <div class="flex flex-wrap gap-2">
-                {#each selectedSubjects.filter(s => selectedTutor.subjects.includes(s)) as subject}
+                {#each selectedSubjects.filter(s => selectedTutor!.subjects.includes(s)) as subject}
                   <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
                     {subject}
                   </span>
@@ -598,11 +600,11 @@
               {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
                 <div class="max-h-64 overflow-y-auto custom-scrollbar pr-2">
                   <!-- Show selected subjects first -->
-                  {#if selectedSubjects.some(s => selectedTutor.subjects.includes(s))}
+                  {#if selectedSubjects.some(s => selectedTutor!.subjects.includes(s))}
                     <div class="mb-3">
                       <h4 class="text-sm font-medium text-blue-700 mb-2">Selected Subjects</h4>
                       <ul class="space-y-1.5">
-                        {#each selectedSubjects.filter(s => selectedTutor.subjects.includes(s)) as subject}
+                        {#each selectedSubjects.filter(s => selectedTutor!.subjects.includes(s)) as subject}
                           <li class="flex items-center">
                             <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>
                             <span class="text-blue-800 font-medium">{subject}</span>
@@ -616,7 +618,7 @@
                   <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Other Subjects</h4>
                     <ul class="space-y-1.5">
-                      {#each selectedTutor.subjects.filter(s => !selectedSubjects.includes(s)) as subject}
+                      {#each selectedTutor!.subjects.filter(s => !selectedSubjects.includes(s)) as subject}
                         <li class="flex items-center">
                           <span class="w-2.5 h-2.5 rounded-full bg-[#151f54] mr-2"></span>
                           {subject}
@@ -636,20 +638,20 @@
             <!-- Education Card -->
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Education</h3>
-              <p class="text-gray-700">{selectedTutor.education || 'Not specified'}</p>
+              <p class="text-gray-700">{selectedTutor!.education || 'Not specified'}</p>
             </div>
             
             <!-- Experience Card -->
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 class="text-lg font-semibold mb-3 text-[#151f54]">Experience</h3>
-              <p class="text-gray-700">{selectedTutor.experience || 'Not specified'}</p>
+              <p class="text-gray-700">{selectedTutor!.experience || 'Not specified'}</p>
             </div>
             
             <!-- About Card -->
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
               <h3 class="text-lg font-semibold mb-3 text-[#151f54]">About</h3>
               <div class="prose max-w-none text-gray-700">
-                <p class="whitespace-pre-line">{selectedTutor.bio || 'No biography available.'}</p>
+                <p class="whitespace-pre-line">{selectedTutor!.bio || 'No biography available.'}</p>
               </div>
             </div>
           </div>
@@ -772,7 +774,18 @@
   
   /* Highlight selected subjects */
   .bg-blue-100 {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+    font-weight: 500;
+    background-color: #dbeafe !important;
+    border-color: #93c5fd !important;
+  }
+  
+  /* Ensure text is visible in all states */
+  button.text-blue-700 {
+    color: #1d4ed8 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-weight: 600 !important;
   }
   
   /* Line clamp for bio text */
@@ -780,6 +793,7 @@
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
   }
 </style>

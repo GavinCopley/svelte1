@@ -17,7 +17,27 @@ const COLLECTION_NAME = 'tutors';
 export const tutorService = {
   // Get all tutors
   getAllTutors: async (): Promise<Tutor[]> => {
-    return await firestoreDB.getCollection(COLLECTION_NAME) as Tutor[];
+    try {
+      const tutors = await firestoreDB.getCollection(COLLECTION_NAME) as Tutor[];
+      console.log(`Retrieved ${tutors.length} tutors successfully`);
+      
+      // Normalize and validate tutor data
+      return tutors.map(tutor => ({
+        id: tutor.id,
+        name: tutor.name || 'Unknown',
+        subjects: Array.isArray(tutor.subjects) ? 
+          tutor.subjects.filter(s => typeof s === 'string') : 
+          (typeof tutor.subjects === 'string' ? [tutor.subjects] : []),
+        education: tutor.education || '',
+        experience: tutor.experience || '',
+        bio: tutor.bio || '',
+        image: tutor.image || ''
+      }));
+    } catch (error) {
+      console.error('Error in tutorService.getAllTutors:', error);
+      // Provide empty array as fallback
+      return [];
+    }
   },
   
   // Get a single tutor by ID

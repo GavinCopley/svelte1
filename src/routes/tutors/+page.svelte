@@ -560,14 +560,6 @@
     <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-6">
       We have evaluated all of our tutors for their teaching skills and mastery of their subjects.
     </p>
-    <div class="flex justify-center">
-      <a href="/tutorfilter" class="bg-[#151f54] text-white px-6 py-3 rounded-md font-bold hover:bg-[#212d6e] transition-colors inline-flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-        </svg>
-        Filter Tutors by Subject
-      </a>
-    </div>
   </section>
 
   <!-- Tutor Selection Process -->
@@ -630,7 +622,7 @@
             <p class="mt-1 text-sm text-red-600">{errors.name}</p>
           {/if}
         </div>
-          
+
         <!-- Subjects Field -->
         <div class="form-group">
           <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects *</label>
