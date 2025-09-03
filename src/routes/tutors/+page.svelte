@@ -556,11 +556,19 @@
 <div class="max-w-6xl mx-auto px-4" class:secret-activated={secretActivated}>
   <!-- Hero Section -->
   <section class="relative z-[1] text-center mb-12">
-  <h1 class="text-5xl font-extrabold text-[#151f54] mb-4 tracking-tight">Meet Our Tutors</h1>
-  <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
-    We have evaluated all of our tutors for their teaching skills and mastery of their subjects.
-  </p>
-</section>
+    <h1 class="text-5xl font-extrabold text-[#151f54] mb-4 tracking-tight">Meet Our Tutors</h1>
+    <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-6">
+      We have evaluated all of our tutors for their teaching skills and mastery of their subjects.
+    </p>
+    <div class="flex justify-center">
+      <a href="/tutorfilter" class="bg-[#151f54] text-white px-6 py-3 rounded-md font-bold hover:bg-[#212d6e] transition-colors inline-flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+        </svg>
+        Filter Tutors by Subject
+      </a>
+    </div>
+  </section>
 
   <!-- Tutor Selection Process -->
   <div class="mb-12">
@@ -622,14 +630,15 @@
             <p class="mt-1 text-sm text-red-600">{errors.name}</p>
           {/if}
         </div>
-        
+          
         <!-- Subjects Field -->
         <div class="form-group">
           <label for="tutor-subjects" class="block text-sm font-medium text-gray-700 mb-1">Subjects *</label>
           <div class="flex items-center space-x-2">
             <div class="flex-grow relative">
-              <div 
-                class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto cursor-not-allowed select-none flex flex-col justify-center"
+              <button 
+                type="button"
+                class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto text-left flex flex-col justify-center"
                 aria-readonly="true"
                 aria-label="Selected subjects"
                 on:click={openSubjectsModal}
@@ -648,7 +657,7 @@
                 {:else}
                   <span class="text-gray-400">No subjects selected • Click "Select Classes" button to choose subjects</span>
                 {/if}
-              </div>
+              </button>
             </div>
             <button
               type="button"
@@ -772,7 +781,14 @@
         {#if isEditing && selectedTutor}
           <button
             class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
-            on:click={() => updateTutor(selectedTutor.id)}>
+            on:click={() => {
+              if (selectedTutor && selectedTutor.id) {
+                updateTutor(selectedTutor.id);
+              } else {
+                console.error('Cannot update tutor: Invalid tutor ID');
+                alert('Error: Unable to update tutor due to missing ID.');
+              }
+            }}>
             Update Tutor
           </button>
         {:else}
@@ -893,7 +909,7 @@
               </button>
               <button
                 class="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center shadow-sm transition-colors"
-                on:click={() => deleteTutor(selectedTutor.id)}
+                on:click={() => selectedTutor && selectedTutor.id ? deleteTutor(selectedTutor.id) : null}
                 title="Delete Tutor"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">

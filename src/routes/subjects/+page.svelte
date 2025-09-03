@@ -98,6 +98,11 @@
     }
   }
 
+  // Function to navigate to tutorfilter page with subject filter
+  function findTutorsForSubject(subject: string) {
+    window.location.href = `/tutorfilter?subject=${encodeURIComponent(subject)}`;
+  }
+
   function close() {
     modalOpen = false;
     active = null;
@@ -134,8 +139,11 @@
   }
 
   function selectPlan(kind: 'ap' | 'reg') {
-    // TODO: wire to router/checkout (e.g. goto(`/checkout?subject=${active?.key}&plan=${kind}`))
-    alert(`Selected ${kind === 'ap' ? 'AP' : 'No-AP'} ${active?.name}`);
+    // Redirect to the tutorfilter page with the subject filter
+    const subjectName = active?.name || '';
+    const prefix = kind === 'ap' ? 'AP ' : '';
+    const fullSubjectName = prefix + subjectName;
+    findTutorsForSubject(fullSubjectName);
   }
 
   function openContactForm() {
@@ -164,7 +172,7 @@
 <section class="relative z-[1] text-center mb-12">
   <h1 class="text-5xl font-extrabold text-[#151f54] mb-4 tracking-tight">Explore Our Subject Areas</h1>
   <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
-    Pick a subject below. In the popup, choose <b>AP</b> or <b>No-AP</b>—same great tutors, tailored paths.
+    Pick a subject below. Choose <b>AP</b> or <b>No-AP</b> to find specialized tutors tailored to your path.
   </p>
 </section>
 
@@ -295,7 +303,7 @@
       <header class="modal-head">
         <div>
           <h2 id="dialog-title">{active?.name}</h2>
-          <p id="dialog-desc" class="head-sub">Choose <b>AP</b> or <b>No-AP</b> for {active?.name}. Your selection will shape pacing, practice, and goals.</p>
+          <p id="dialog-desc" class="head-sub">Choose <b>AP</b> or <b>No-AP</b> for {active?.name} to find tutors specialized in your selected path.</p>
         </div>
         <button class="icon-btn" on:click={close} aria-label="Close dialog">✕</button>
       </header>
@@ -311,7 +319,7 @@
         >
           <div class="tutorial-arrow tutorial-arrow-2"></div>
           <h4>🎯 Next Step</h4>
-          <p>Select AP or non-AP depending on the class your student is taking!</p>
+          <p>Select AP or non-AP to find tutors specialized in that subject path!</p>
           <div class="tutorial-button-container">
             <Button 
               variant="secondary" 
@@ -337,7 +345,7 @@
           <div class="price"><span class="num">${tierData.ap.price}</span><span class="per">/mo</span></div>
           <div class="actions">
             <button class="btn btn-ap" on:click={() => selectPlan('ap')}
-              aria-label={`Choose AP ${active?.name}`}>Select AP</button>
+              aria-label={`Find tutors for AP ${active?.name}`}>Find AP Tutors</button>
           </div>
         </article>
 
@@ -352,10 +360,12 @@
           <div class="price"><span class="num">${tierData.reg.price}</span><span class="per">/mo</span></div>
           <div class="actions">
             <button class="btn btn-reg" on:click={() => selectPlan('reg')}
-              aria-label={`Choose No-AP ${active?.name}`}>Select No-AP</button>
+              aria-label={`Find tutors for No-AP ${active?.name}`}>Find No-AP Tutors</button>
           </div>
         </article>
       </section>
+      
+      <!-- Note: Find Tutors section removed as buttons now directly link to tutor filter page -->
 
       <div class="note">Cancel anytime · 1-on-1 sessions · Online or in-person · Homework support included</div>
     </div>
@@ -538,4 +548,6 @@
     transition: transform .25s ease, box-shadow .25s ease;
   }
   .why:hover{ transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,.14); }
+  
+  /* Find tutors box styles removed as that section is no longer used */
 </style>
