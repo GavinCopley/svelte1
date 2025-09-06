@@ -390,7 +390,7 @@
           class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 {active?.key === s.key ? 'selected-card ap-selected' : ''}"
+                 {active?.key === s.key ? 'selected-card ap-selected' : ''} flex flex-col"
           style="
             animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
             animation-delay: {70*i}ms;
@@ -412,23 +412,23 @@
           </div>
 
           <button
-            class="w-full text-left focus:outline-none"
+            class="w-full text-left focus:outline-none flex flex-col"
             on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
             aria-label={active?.key === s.key ? `${s.name} selected` : `Choose ${s.name}`}
             aria-pressed={active?.key === s.key}
             class:selected={active?.key === s.key}
           >
-            <h3 class="text-lg font-semibold text-[#151f54]">{s.name}</h3>
+            <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
 
             <!-- specific description -->
-            <p class="text-gray-600 text-sm leading-relaxed mt-3 min-h-[72px]">
+            <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
               {s.desc}
             </p>
           </button>
           
           <!-- Find a Tutor button -->
           <button 
-            class="mt-4 w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
+            class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
             on:click={(e) => {
               e.stopPropagation();
               openFor(s, e.currentTarget as HTMLElement);
@@ -453,7 +453,7 @@
           class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 {active?.key === s.key ? 'selected-card reg-selected' : ''}"
+                 {active?.key === s.key ? 'selected-card reg-selected' : ''} flex flex-col"
           style="
             animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
             animation-delay: {70*(i+4)}ms;
@@ -475,23 +475,23 @@
           </div>
 
           <button
-            class="w-full text-left focus:outline-none"
+            class="w-full text-left focus:outline-none flex flex-col"
             on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
             aria-label={active?.key === s.key ? `${s.name} selected` : `Choose ${s.name}`}
             aria-pressed={active?.key === s.key}
             class:selected={active?.key === s.key}
           >
-            <h3 class="text-lg font-semibold text-[#151f54]">{s.name}</h3>
+            <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
 
             <!-- specific description -->
-            <p class="text-gray-600 text-sm leading-relaxed mt-3 min-h-[72px]">
+            <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
               {s.desc}
             </p>
           </button>
           
           <!-- Find a Tutor button -->
           <button 
-            class="mt-4 w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
+            class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
             on:click={(e) => {
               e.stopPropagation();
               openFor(s, e.currentTarget as HTMLElement);
@@ -890,5 +890,28 @@
     background-color: #d1fae5 !important;
     border-color: #10b981 !important;
     color: #065f46 !important;
+  }
+
+  /* Card layout structure for consistent button alignment */
+  .group.relative {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .group.relative button.w-full.text-left {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .group.relative button.w-full.text-left p {
+    flex-grow: 1;
+  }
+  
+  .text-lg.font-semibold.text-\[\#151f54\] {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
   }
 </style>

@@ -6,6 +6,7 @@
   import { subjectService, type Subject } from '$lib/services/subjectService';
   import { tutorService } from '$lib/services/tutorService';
   import { tick } from 'svelte';
+  import { getEmoji, categoryEmojis } from '$lib';
   
   // Enhanced Subject interface that includes UI elements and tutor count
   interface EnhancedSubject extends Subject {
@@ -61,47 +62,8 @@
     expandedCategories = {...expandedCategories}; // Trigger reactivity
   }
   
-  // Subject categories with emojis
-  const categoryEmojis: Record<string, string> = {
-    "Mathematics": "🔢",
-    "Science": "🔬",
-    "Language Arts": "✏️", 
-    "Social Studies": "🌎",
-    "Foreign Languages": "🌐",
-    "Arts": "🎨",
-    "Computer Science": "💻",
-    "Test Prep": "📝",
-    "College Board": "🎓",
-    "Other": "📚"
-  };
-  
-  // Get appropriate emoji based on subject name or category
-  function getEmoji(subject: Subject): string {
-    const name = subject.name.toLowerCase();
-    
-    // Match specific subjects to emojis
-    if (name.includes('algebra')) return '🧮';
-    if (name.includes('geometry')) return '📐';
-    if (name.includes('calculus')) return '📈';
-    if (name.includes('statistics')) return '📊';
-    if (name.includes('biology')) return '🧬';
-    if (name.includes('chemistry')) return '🧪';
-    if (name.includes('physics')) return '⚛️';
-    if (name.includes('english') || name.includes('literature')) return '📚';
-    if (name.includes('writing')) return '✍️';
-    if (name.includes('history')) return '🗿';
-    if (name.includes('spanish')) return '🇪🇸';
-    if (name.includes('french')) return '🇫🇷';
-    if (name.includes('chinese') || name.includes('mandarin')) return '🇨🇳';
-    if (name.includes('latin')) return '🏛️';
-    if (name.includes('computer')) return '💻';
-    if (name.includes('java')) return '☕';
-    if (name.includes('python')) return '🐍';
-    if (name.includes('web')) return '🌐';
-    
-    // Default to category emoji
-    return categoryEmojis[subject.category] || '📚';
-  }
+  // Subject categories with emojis - now imported from $lib
+  // Using categoryEmojis imported from $lib/utils/emojiUtils.ts
   
   // Get appropriate tag based on subject name and level
   function getTag(subject: Subject): string {
@@ -788,9 +750,7 @@
                 <div class="p-5">
                   <p class="text-gray-600 mb-4 h-[60px] overflow-hidden line-clamp-3">
                     {subject.description || "Learn about this exciting subject with our expert tutors."}
-                  </p>
-                  
-                  <!-- Tutor availability indicators -->
+                  </p>                    <!-- Tutor availability indicators -->
                   <div class="flex flex-col gap-2 mb-4">
                     <!-- Overall tutor count -->
                     <div class="flex items-center">
@@ -799,26 +759,7 @@
                         {subject.tutorCount || 0} tutor{subject.tutorCount !== 1 ? 's' : ''} available
                       </span>
                     </div>
-                    
-                    <!-- AP vs Non-AP breakdown -->
-                    <div class="flex items-center gap-4 text-xs text-gray-500 pl-6">
-                      <span class="flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-blue-500 mr-1"></span>
-                        <span class={subject.apTutorCount > 0 ? 'font-medium text-blue-800' : 'text-gray-400'}>
-                          {subject.apTutorCount} AP
-                        </span>
-                      </span>
-                      
-                      <span class="flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-indigo-500 mr-1"></span>
-                        <span class={subject.nonApTutorCount > 0 ? 'font-medium text-indigo-800' : 'text-gray-400'}>
-                          {subject.nonApTutorCount} {subject.name.toLowerCase().startsWith('ap ') ? 'Regular' : 'No-AP'}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <!-- AP/No-AP selection buttons -->
+                  </div>                    <!-- AP/No-AP selection buttons -->
                   <div class="flex flex-col space-y-3 mt-5">
                     <!-- For AP subjects, only show AP tutors button -->
                     {#if isAPClass(subject) && subject.apTutorCount > 0}
@@ -827,9 +768,6 @@
                         class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-colors duration-300 shadow-sm"
                       >
                         Find AP Tutors
-                        <span class="ml-1 text-xs bg-white bg-opacity-20 px-1.5 py-0.5 rounded-full">
-                          {subject.apTutorCount}
-                        </span>
                       </button>
                     {/if}
                     
@@ -840,9 +778,6 @@
                         class="w-full py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium rounded-lg transition-colors duration-300 shadow-sm"
                       >
                         Find Regular Tutors
-                        <span class="ml-1 text-xs bg-white bg-opacity-20 px-1.5 py-0.5 rounded-full">
-                          {subject.nonApTutorCount}
-                        </span>
                       </button>
                     {/if}
                     
