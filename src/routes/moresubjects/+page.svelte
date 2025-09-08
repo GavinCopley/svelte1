@@ -35,7 +35,10 @@
   
   // Track which categories are expanded
   let expandedCategories: Record<string, boolean> = {};
-
+  
+  // Track which subject descriptions are expanded
+  let expandedDescriptions: Record<string, boolean> = {};
+  
   // Pricing and plan information
   const tierData = {
     ap:  {
@@ -60,6 +63,12 @@
   function toggleCategory(category: string) {
     expandedCategories[category] = !expandedCategories[category];
     expandedCategories = {...expandedCategories}; // Trigger reactivity
+  }
+  
+  // Function to toggle subject description expansion
+  function toggleDescription(subjectId: string) {
+    expandedDescriptions[subjectId] = !expandedDescriptions[subjectId];
+    expandedDescriptions = {...expandedDescriptions}; // Trigger reactivity
   }
   
   // Subject categories with emojis - now imported from $lib
@@ -748,9 +757,23 @@
                 </div>
                 
                 <div class="p-5">
-                  <p class="text-gray-600 mb-4 h-[60px] overflow-hidden line-clamp-3">
-                    {subject.description || "Learn about this exciting subject with our expert tutors."}
-                  </p>                    <!-- Tutor availability indicators -->
+                  <div class="mb-4">
+                    <div class={`text-gray-600 transition-all duration-300 ${expandedDescriptions[subject.id || ''] ? 'h-auto max-h-[120px] overflow-y-auto custom-scrollbar' : 'h-[60px] overflow-hidden line-clamp-3'}`}>
+                      {subject.description || "Learn about this exciting subject with our expert tutors."}
+                    </div>
+                    <button 
+                      class="text-blue-600 hover:text-blue-800 text-sm mt-1 font-medium flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 rounded-sm"
+                      on:click={() => toggleDescription(subject.id || '')}
+                      aria-expanded={expandedDescriptions[subject.id || '']}
+                      aria-controls={`desc-${subject.id || ''}`}
+                    >
+                      {expandedDescriptions[subject.id || ''] ? 'Show less' : 'Read more'}
+                      <svg xmlns="http://www.w3.org/2000/svg" class={`ml-1 h-4 w-4 transform transition-transform ${expandedDescriptions[subject.id || ''] ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <!-- Tutor availability indicators -->
                   <div class="flex flex-col gap-2 mb-4">
                     <!-- Overall tutor count -->
                     <div class="flex items-center">
@@ -900,6 +923,31 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  /* Custom scrollbar for subject descriptions */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #c7d2fe #f1f1f1;
+    padding-right: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c7d2fe;
+    border-radius: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a5b4fc;
   }
   
   /* Button disabled state */
