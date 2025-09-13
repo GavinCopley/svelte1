@@ -99,10 +99,30 @@ export function buildTutorSummary(a: SessionAnswers): string {
 function mapSubjectToCalendlyOption(subject: string | undefined): string | undefined {
   if (!subject) return undefined;
   const s = subject.toLowerCase();
-  if (/(ap\s*bio|ap\s*biology|biology|bio)/i.test(subject)) return 'AP Bio';
-  if (/(ap\s*calc|calculus|ap calculus)/i.test(subject)) return 'AP Calculus';
-  if (/(sat|psat)/i.test(subject)) return 'SAT Practice';
-  return undefined; // leave unselected if no close match
+
+  // Direct matches
+  if (/^ap\s*biology$|\bap\s*bio\b|\bbiology\b|\bbio\b/.test(s)) return 'AP Bio';
+  if (/^ap\s*calculus(\s*ab|\s*bc)?$|\bpre-?calculus\b|\bprecalculus\b|\bcalculus\b/.test(s)) return 'AP Calculus';
+  if (/\bsat\b|\bpsat\b|\btest prep\b|\bexam prep\b/.test(s)) return 'SAT Practice';
+
+  // Sciences bucket -> AP Bio
+  if (/\b(ap\s*)?(chemistry|physics|environmental\s*science|earth\s*science|physical\s*science|life\s*science|science)\b/.test(s)) return 'AP Bio';
+
+  // Math/CS bucket -> AP Calculus
+  if (/\b(algebra\s*i{0,3}|geometry|trigonometry|trig|statistics|stats|discrete\s*math|number\s*theory|linear\s*algebra|math)\b/.test(s)) return 'AP Calculus';
+  if (/\b(ap\s*)?computer\s*science\b|\bcomp(uter)?\s*sci(ence)?\b|\brobotics\b|\bweb\s*design\b|\bprogramming\b|\bcoding\b/.test(s)) return 'AP Calculus';
+
+  // Exams/Humanities/Languages/Arts/Other -> SAT Practice
+  if (/\b(ap\s*)?(english|literature|language|writing|reading|history|government|civics|economics|psychology|sociology|human\s*geography|european\s*history|world\s*history|u\.?s\.?\s*history|journalism|creative\s*writing|speech|debate|film|art|music|band|choir|drama|latin|spanish|french|german|italian|japanese|chinese)\b/.test(s)) {
+    return 'SAT Practice';
+  }
+
+  // Elementary/Middle buckets
+  if (/\b(6th|7th|8th)\s*grade\s*math\b|\belementary\s*math\b|\bpre-?algebra\b/.test(s)) return 'AP Calculus';
+  if (/\b(6th|7th|8th)\s*grade\s*science\b|\belementary\s*science\b/.test(s)) return 'AP Bio';
+  if (/\b(6th|7th|8th)\s*grade\s*(english|reading|writing|social\s*studies)\b|\belementary\s*(reading|writing|social\s*studies)\b/.test(s)) return 'SAT Practice';
+
+  return undefined; // no strong match
 }
 
 const SUBJECT_FALLBACK: string = 'SAT Practice'; // change if you prefer another default
