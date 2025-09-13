@@ -1,9 +1,21 @@
 <script lang="ts"> 
+  // Define Calendly interface for TypeScript
+  interface CalendlyWidget {
+    initInlineWidget: (options: {
+      url: string;
+      parentElement: HTMLElement | null;
+      prefill: any;
+      utm: any;
+    }) => void;
+  }
+  
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
   import { db } from '$lib/firebase';
   import type { Tutor } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
+  import { getEmoji } from '$lib/utils/emojiUtils';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
@@ -14,6 +26,10 @@
   let subjectsModalOpen = false;
   let searchQuery = '';
   let selectedSubjects: string[] = [];
+  
+  // Booking modal state
+  let bookingModalOpen = false;
+  let subjectSelectionModalOpen = false; // For displaying subjects before booking
   
   // Subject categories
   const subjectCategories = [
@@ -162,8 +178,48 @@
   
   // Function to open the subjects detail modal
   function openSubjectsDetailModal(tutor: Tutor) {
+    if (tutor) {
+      selectedTutor = tutor;
+      subjectsModalDetailOpen = true;
+    }
+  }
+  
+  // Function to open the booking modal with Calendly
+  function openBookingModal() {
+    if (selectedTutor) {
+      // If we don't have any subjects selected yet, use the subjects from the tutor
+      if (selectedSubjects.length === 0 && selectedTutor.subjects) {
+        // Default to first subject if available
+        if (selectedTutor.subjects.length > 0) {
+          selectedSubjects = [selectedTutor.subjects[0]];
+        }
+      }
+      bookingModalOpen = true;
+    }
+  }
+  
+  // Function to open the subject selection modal before booking
+  function openSubjectSelectionModal(tutor: Tutor) {
     selectedTutor = tutor;
-    subjectsModalDetailOpen = true;
+    // Initialize selected subjects to be empty
+    selectedSubjects = [];
+    subjectSelectionModalOpen = true;
+  }
+  
+  // Function to get a dynamic Calendly URL for a tutor
+  function getCalendlyUrl(tutor: Tutor | null): string {
+    if (!tutor) return '';
+    
+    // If the tutor has a calendlyLink, use that
+    if (tutor.calendlyLink) {
+      // Make sure it has the hide_gdpr_banner parameter
+      const url = new URL(tutor.calendlyLink);
+      url.searchParams.set('hide_gdpr_banner', '1');
+      return url.toString();
+    }
+    
+    // Return empty string to indicate no Calendly link available
+    return '';
   }
   
   // Secret code detection
@@ -176,91 +232,43 @@
     const loadTutors = async () => {
       try {
         loading = true;
-        console.log("Attempting to load tutors from Firestore...");
-        console.log("Firestore instance:", db ? "Available" : "Not Available");
+        console.log("Starting to load tutors from Firestore...");
         
-        // Direct Firestore access for debugging
+        // Get tutors from Firestore
         const tutorsCollection = collection(db, "tutors");
-        console.log("Collection reference created:", tutorsCollection);
-        
         const querySnapshot = await getDocs(tutorsCollection);
-        console.log("Firestore query complete. Documents found:", querySnapshot.size);
         
-        if (querySnapshot.empty) {
-          console.log("No tutors found in collection");
-          tutors = [];
-        } else {
-          tutors = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            console.log("Document ID:", doc.id);
-            console.log("Document data:", data);
-            console.log("Subjects type:", typeof data.subjects, "Value:", data.subjects);
-            
-            // Handle different ways subjects might be stored in Firestore
-            let formattedSubjects: string[] = [];
-            
-            if (Array.isArray(data.subjects)) {
-              // Handle regular array
-              formattedSubjects = [...data.subjects];
-              console.log("Handled as array:", formattedSubjects);
-            } else if (typeof data.subjects === 'string') {
-              // Handle string format
-              formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
-              console.log("Handled as string:", formattedSubjects);
-            } else if (data.subjects && typeof data.subjects === 'object') {
-              // Handle object format (Firebase often converts arrays to objects with numeric keys)
-              try {
-                // Try to extract values and convert back to array
-                formattedSubjects = Object.values(data.subjects);
-                console.log("Handled as object:", formattedSubjects);
-              } catch (e) {
-                console.error("Error processing subjects as object:", e);
-                formattedSubjects = [];
-              }
-            } else if (data.subject) {
-              // Check if the field name might be singular instead of plural
-              if (typeof data.subject === 'string') {
-                formattedSubjects = [data.subject];
-              } else if (Array.isArray(data.subject)) {
-                formattedSubjects = [...data.subject];
-              }
-              console.log("Used singular 'subject' field:", formattedSubjects);
-            } else {
-              console.log("No subjects data found");
-            }
-            
-            // Ensure we always have a valid array even if processing failed
-            if (!Array.isArray(formattedSubjects)) {
-              console.warn("Subjects is not an array after processing, defaulting to empty array");
-              formattedSubjects = [];
-            }
-            
-            // For safety, filter out any non-string values
-            formattedSubjects = formattedSubjects.filter(s => typeof s === 'string');
-            
-            console.log("Final formatted subjects:", formattedSubjects);
-            
-            return {
-              id: doc.id,
-              name: data.name || "Unknown",
-              subjects: formattedSubjects,
-              education: data.education || "",
-              experience: data.experience || "",
-              bio: data.bio || "",
-              image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
-            };
-          });
-          console.log("Processed tutors data:", tutors);
-        }
+        // Process tutor data
+        tutors = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          let formattedSubjects: string[] = [];
+          
+          // Normalize subjects data
+          if (Array.isArray(data.subjects)) {
+            formattedSubjects = [...data.subjects];
+          } else if (typeof data.subjects === 'string') {
+            formattedSubjects = data.subjects.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (data.subjects && typeof data.subjects === 'object') {
+            formattedSubjects = Object.values(data.subjects).filter(s => typeof s === 'string');
+          }
+          
+          return {
+            id: doc.id,
+            name: data.name || "Unknown",
+            subjects: formattedSubjects,
+            education: data.education || "",
+            experience: data.experience || "",
+            bio: data.bio || "",
+            image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`,
+            calendlyLink: data.calendlyLink || ""
+          };
+        });
+        
+        console.log(`Loaded ${tutors.length} tutors successfully.`);
         loading = false;
       } catch (err) {
-        console.error("Error fetching tutors:", err);
-        if (err instanceof Error) {
-          console.error("Error details:", err.stack);
-          error = err.message || "Failed to load tutors";
-        } else {
-          error = "Failed to load tutors";
-        }
+        console.error("Error loading tutors:", err);
+        error = err instanceof Error ? err.message : "Failed to load tutors";
         loading = false;
       }
     };
@@ -309,6 +317,36 @@
     };
   });
 
+  // Watch for changes to bookingModalOpen and load Calendly script when modal opens
+  $: {
+    if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
+      // Small delay to ensure the DOM is ready
+      setTimeout(() => {
+        const existingScript = document.querySelector('script[src*="calendly.com/assets/external/widget.js"]');
+        if (!existingScript) {
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = 'https://assets.calendly.com/assets/external/widget.js';
+          script.async = true;
+          document.body.appendChild(script);
+        }
+        // If script exists but we need to reinitialize Calendly
+        else {
+          // Access Calendly safely using indexing
+          const calendlyWidget = (window as any).Calendly as CalendlyWidget | undefined;
+          if (calendlyWidget) {
+            calendlyWidget.initInlineWidget({
+              url: getCalendlyUrl(selectedTutor),
+              parentElement: document.querySelector('.calendly-inline-widget'),
+              prefill: {},
+              utm: {}
+            });
+          }
+        }
+      }, 100);
+    }
+  }
+  
   // Form state for adding new tutors
   let showForm = false;
   
@@ -544,6 +582,21 @@
       }
     }
   }
+  
+  // Helper function to get the emoji for a subject string
+  function getSubjectEmoji(subjectName: string): string {
+    // Create a mock Subject object that matches the expected structure
+    const mockSubject = { 
+      name: subjectName, 
+      category: '',
+      id: '',
+      description: '',
+      level: '' 
+    };
+    
+    // Use the getEmoji function from emojiUtils
+    return getEmoji(mockSubject);
+  }
 </script>
 
 <svelte:head>
@@ -640,7 +693,6 @@
               <button 
                 type="button"
                 class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm bg-gray-50 min-h-[2.5rem] max-h-[5rem] overflow-y-auto text-left flex flex-col justify-center"
-                aria-readonly="true"
                 aria-label="Selected subjects"
                 on:click={openSubjectsModal}
               >
@@ -950,13 +1002,34 @@
             />
             
             <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <h3 class="font-semibold text-lg mb-2">Subjects</h3>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold text-lg">Subjects</h3>
+                {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+                  <button 
+                    class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                    on:click={() => selectedTutor && openSubjectsDetailModal(selectedTutor)}
+                  >
+                    <span>View all</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                {/if}
+              </div>
+              
               {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
-                <ul class="list-disc list-inside space-y-1">
-                  {#each selectedTutor.subjects as subject}
-                    <li>{subject}</li>
+                <div class="flex flex-wrap gap-2">
+                  {#each selectedTutor.subjects.slice(0, 5) as subject}
+                    <span class="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
+                      {subject}
+                    </span>
                   {/each}
-                </ul>
+                  {#if selectedTutor.subjects.length > 5}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                      +{selectedTutor.subjects.length - 5} more
+                    </span>
+                  {/if}
+                </div>
               {:else}
                 <p class="text-gray-500">No subjects specified</p>
               {/if}
@@ -992,15 +1065,15 @@
             Close
           </button>
           
-          <a 
-            href="/booking" 
+          <button 
             class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2 flex items-center"
+            on:click={openSubjectSelectionModal.bind(null, selectedTutor)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
             </svg>
             Book a Session
-          </a>
+          </button>
         </div>
       </svelte:fragment>
     </Modal>
@@ -1204,6 +1277,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {#each selectedTutor.subjects as subject}
               <div class="p-2 bg-blue-50 rounded-lg border border-blue-100 text-[#151f54] flex items-center">
+                <span class="text-xl mr-2">{getSubjectEmoji(subject)}</span>
                 <span class="text-sm font-medium">{subject}</span>
               </div>
             {/each}
@@ -1226,6 +1300,194 @@
       </div>
     </div>
   </div>
+{/if}
+
+<!-- Subject Selection Modal (before booking) -->
+{#if subjectSelectionModalOpen && selectedTutor}
+  <Modal bind:open={subjectSelectionModalOpen}>
+    <svelte:fragment slot="header">
+      <div class="w-full">
+        <h2 class="text-xl font-bold text-[#151f54]">Select Subjects with {selectedTutor.name}</h2>
+      </div>
+    </svelte:fragment>
+    
+    <svelte:fragment slot="content">
+      <div class="py-4">
+        <p class="text-gray-700 mb-6">
+          Select the subjects you'd like to work on with {selectedTutor.name}:
+        </p>
+        
+        {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+          <!-- Selected subjects display -->
+          {#if selectedSubjects.length > 0}
+            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subjects ({selectedSubjects.length})</h3>
+              <div class="flex flex-wrap gap-2">
+                {#each selectedSubjects as subject}
+                  <div class="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                    {subject}
+                    <button 
+                      class="ml-1 text-blue-500 hover:text-blue-700"
+                      on:click={() => toggleSubject(subject)}
+                      aria-label="Remove {subject}"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+          
+          <!-- Subject cards section -->
+          <div class="grid gap-3">
+            <!-- AP Subjects Section -->
+            {#if selectedTutor.subjects.some(s => s.includes('AP '))}
+              <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">AP Subjects</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                {#each subjectCategories
+                  .filter(cat => cat.subjects.some(s => s.includes('AP ')))
+                  .flatMap(cat => cat.subjects)
+                  .filter(s => s.includes('AP ')) as subject}
+                  
+                  <!-- Only show card if the tutor teaches this subject -->
+                  {#if selectedTutor.subjects.includes(subject)}
+                    <button 
+                      type="button"
+                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
+                      class:selected-card={selectedSubjects.includes(subject)}
+                      class:ap-selected={selectedSubjects.includes(subject)}
+                      on:click={() => toggleSubject(subject)}
+                      aria-pressed={selectedSubjects.includes(subject)}
+                    >
+                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
+                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject.replace('AP ', '')}</h3>
+                      <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
+                        AP Course
+                      </span>
+                    </button>
+                  {/if}
+                {/each}
+              </div>
+            {/if}
+            
+            <!-- Regular Subjects Section -->
+            {#if selectedTutor.subjects.some(s => !s.includes('AP '))}
+              <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">Regular Subjects</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                {#each selectedTutor.subjects.filter(s => !s.includes('AP ')) as subject}
+                  <button 
+                    type="button"
+                    class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
+                    class:selected-card={selectedSubjects.includes(subject)}
+                    class:reg-selected={selectedSubjects.includes(subject)}
+                    on:click={() => toggleSubject(subject)}
+                    aria-pressed={selectedSubjects.includes(subject)}
+                  >
+                    <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
+                    <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject}</h3>
+                    <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
+                      Regular Course
+                    </span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <div class="col-span-full text-center py-8">
+            <p class="text-gray-500">This tutor has no subjects specified.</p>
+          </div>
+        {/if}
+        
+      </div>
+    </svelte:fragment>
+    
+    <svelte:fragment slot="footer">
+      <div class="flex justify-between w-full">
+        <button
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2"
+          on:click={() => subjectSelectionModalOpen = false}
+        >
+          Cancel
+        </button>
+        
+        <button
+          class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
+          on:click={() => {
+            subjectSelectionModalOpen = false;
+            openBookingModal();
+          }}
+          disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && selectedSubjects.length === 0}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+          </svg>
+          Continue to Booking
+        </button>
+      </div>
+    </svelte:fragment>
+  </Modal>
+{/if}
+  
+<!-- Booking Modal (Calendly) -->
+{#if bookingModalOpen && selectedTutor}
+  <Modal bind:open={bookingModalOpen}>
+    <svelte:fragment slot="header">
+      <div class="w-full">
+        <h2 class="text-xl font-bold text-[#151f54]">Book a Session with {selectedTutor.name}</h2>
+      </div>
+    </svelte:fragment>
+    
+    <svelte:fragment slot="content">
+      <div class="py-4">
+        {#if selectedSubjects.length > 0}
+          <div class="mb-6">
+            <h3 class="font-medium text-gray-700 mb-2">Selected Subjects:</h3>
+            <div class="flex flex-wrap gap-2">
+              {#each selectedSubjects as subject}
+                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
+                  {subject}
+                </span>
+              {/each}
+            </div>
+          </div>
+        {/if}
+        
+        {#if selectedTutor.calendlyLink}
+          <p class="text-gray-700 mb-4">
+            Choose a time slot that works for you to schedule a session with {selectedTutor.name}.
+          </p>
+          
+          <!-- Calendly inline widget -->
+          <div class="calendly-inline-widget" data-url={getCalendlyUrl(selectedTutor)} style="min-width:320px;height:700px;"></div>
+        {:else}
+          <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Booking Not Available</h3>
+            <p class="text-gray-600 max-w-md">
+              {selectedTutor.name} is currently not available for direct booking. Please check back later or contact support for assistance.
+            </p>
+          </div>
+        {/if}
+      </div>
+    </svelte:fragment>
+    
+    <svelte:fragment slot="footer">
+      <div class="flex justify-end w-full">
+        <button
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2"
+          on:click={() => bookingModalOpen = false}
+        >
+          Close
+        </button>
+      </div>
+    </svelte:fragment>
+  </Modal>
 {/if}
 
 <style lang="css">
@@ -1255,5 +1517,49 @@
   
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: #a8a8a8;
+  }
+  
+  /* Selected subject card styles */
+  .selected-card {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+  .ap-selected {
+    background-color: #dbeafe; /* Light blue background */
+    border-color: #93c5fd !important; /* Blue border */
+  }
+  .reg-selected {
+    background-color: #dcfce7; /* Light green background */
+    border-color: #86efac !important; /* Green border */
+  }
+  .selected-card h3 {
+    font-weight: 700;
+  }
+  .selected-card {
+    color: #1e3a8a;
+  }
+  /* Make sure all text in selected cards is visible */
+  .selected-card * {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Enhance icon in selected cards */
+  .selected-card .text-3xl {
+    transform: scale(1.05);
+  }
+  
+  /* Enhance tag in selected AP cards */
+  .ap-selected .rounded-full {
+    background-color: #bfdbfe;
+    color: #1e40af;
+    font-weight: 600;
+  }
+  
+  /* Enhance tag in selected Regular cards */
+  .reg-selected .rounded-full {
+    background-color: #bbf7d0;
+    color: #166534;
+    font-weight: 600;
   }
 </style>

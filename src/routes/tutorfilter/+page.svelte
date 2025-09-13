@@ -1,10 +1,22 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Define Calendly interface for TypeScript
+  interface CalendlyWidget {
+    initInlineWidget: (options: {
+      url: string;
+      parentElement: HTMLElement | null;
+      prefill: any;
+      utm: any;
+    }) => void;
+  }
+  
+  import { onMount, afterUpdate } from 'svelte';
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import { collection, getDocs } from 'firebase/firestore';
   import { db } from '$lib/firebase';
   import type { Tutor } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
+  import { getEmoji } from '$lib/utils/emojiUtils';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
@@ -21,6 +33,12 @@
   let modalOpen = false;
   let selectedTutor: Tutor | null = null;
   let subjectsModalOpen = false; // For showing all subjects
+  let subjectSelectionModalOpen = false; // For selecting a subject before booking
+  let bookingModalOpen = false; // For showing Calendly booking modal
+  let showAllSubjects = false; // For showing all subjects in tutor profile
+  
+  // Booking state
+  let selectedBookingSubject: string = ''; // Only one subject can be selected for booking
   
   // Subject categories from the existing tutors page
   const subjectCategories = [
@@ -116,6 +134,8 @@
   function openTutorProfile(tutor: Tutor) {
     selectedTutor = tutor;
     modalOpen = true;
+    // Reset subject display when opening profile
+    showAllSubjects = false;
   }
   
   // Function to open the subjects detail modal
@@ -123,6 +143,30 @@
     event.stopPropagation(); // Prevent the main card click from firing
     selectedTutor = tutor;
     subjectsModalOpen = true;
+  }
+  
+  // Function to open the subject selection modal before booking
+  function openSubjectSelectionModal(tutor: Tutor | null, event?: MouseEvent | KeyboardEvent) {
+    if (event) {
+      event.stopPropagation(); // Prevent other click events from firing
+    }
+    if (tutor) {
+      selectedTutor = tutor;
+      // Reset the selected booking subject
+      selectedBookingSubject = '';
+      subjectSelectionModalOpen = true;
+    }
+  }
+  
+  // Function to select a subject for booking
+  function selectBookingSubject(subject: string) {
+    selectedBookingSubject = selectedBookingSubject === subject ? '' : subject;
+  }
+  
+  // Function to proceed to booking after subject selection
+  function proceedToBooking() {
+    subjectSelectionModalOpen = false;
+    bookingModalOpen = true;
   }
   
   // Function to toggle a subject filter
@@ -180,6 +224,45 @@
     return "Other";
   }
   
+  // Function to toggle showing all subjects in profile
+  function toggleShowAllSubjects(event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    showAllSubjects = !showAllSubjects;
+  }
+  
+  // Function to get a dynamic Calendly URL for a tutor
+  function getCalendlyUrl(tutor: Tutor | null): string {
+    if (!tutor) return '';
+    
+    // If the tutor has a calendlyLink, use that
+    if (tutor.calendlyLink) {
+      // Make sure it has the hide_gdpr_banner parameter
+      const url = new URL(tutor.calendlyLink);
+      url.searchParams.set('hide_gdpr_banner', '1');
+      return url.toString();
+    }
+    
+    // Return empty string to indicate no Calendly link available
+    return '';
+  }
+  
+  // Helper function to get the emoji for a subject string
+  function getSubjectEmoji(subjectName: string): string {
+    // Create a mock Subject object that matches the expected structure
+    const mockSubject = { 
+      name: subjectName, 
+      category: '',
+      id: '',
+      description: '',
+      level: '' 
+    };
+    
+    // Use the getEmoji function from emojiUtils
+    return getEmoji(mockSubject);
+  }
+  
   // Load tutors from Firestore
   onMount(async () => {
     try {
@@ -217,7 +300,8 @@
           education: data.education || "",
           experience: data.experience || "",
           bio: data.bio || "",
-          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`
+          image: data.image || `https://placehold.co/200x200?text=${encodeURIComponent((data.name || '?').charAt(0))}`,
+          calendlyLink: data.calendlyLink || ""
         };
       });
       
@@ -254,6 +338,36 @@
       loading = false;
     }
   });
+  
+  // Watch for changes to bookingModalOpen and load Calendly script when modal opens
+  $: {
+    if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
+      // Small delay to ensure the DOM is ready
+      setTimeout(() => {
+        const existingScript = document.querySelector('script[src*="calendly.com/assets/external/widget.js"]');
+        if (!existingScript) {
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = 'https://assets.calendly.com/assets/external/widget.js';
+          script.async = true;
+          document.body.appendChild(script);
+        }
+        // If script exists but we need to reinitialize Calendly
+        else {
+          // Access Calendly safely using indexing
+          const calendlyWidget = (window as any).Calendly as CalendlyWidget | undefined;
+          if (calendlyWidget) {
+            calendlyWidget.initInlineWidget({
+              url: getCalendlyUrl(selectedTutor),
+              parentElement: document.querySelector('.calendly-inline-widget'),
+              prefill: {},
+              utm: {}
+            });
+          }
+        }
+      }, 100);
+    }
+  }
   
   // Re-apply filters when selectedSubjects or searchQuery changes
   $: {
@@ -580,12 +694,12 @@
             
             <!-- Contact Button for Mobile -->
             <div class="mt-4 md:hidden">
-              <a 
-                href="/booking" 
+              <button 
                 class="w-full block text-center px-4 py-3 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors font-medium"
+                on:click={(event) => openSubjectSelectionModal(selectedTutor, event)}
               >
                 Book a Session with {selectedTutor.name.split(' ')[0]}
-              </a>
+              </button>
             </div>
             
             <!-- Subjects Card -->
@@ -614,16 +728,37 @@
                     </div>
                   {/if}
                   
-                  <!-- Other subjects -->
+                  <!-- Other subjects - limit to 10 unless expanded -->
                   <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Other Subjects</h4>
                     <ul class="space-y-1.5">
-                      {#each selectedTutor!.subjects.filter(s => !selectedSubjects.includes(s)) as subject}
+                      {#each selectedTutor!.subjects.filter(s => !selectedSubjects.includes(s))
+                        .slice(0, showAllSubjects ? undefined : 10) as subject}
                         <li class="flex items-center">
                           <span class="w-2.5 h-2.5 rounded-full bg-[#151f54] mr-2"></span>
                           {subject}
                         </li>
                       {/each}
+                      
+                      {#if !showAllSubjects && selectedTutor.subjects.filter(s => !selectedSubjects.includes(s)).length > 10}
+                        <li class="mt-2">
+                          <button 
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                            on:click={toggleShowAllSubjects}
+                          >
+                            <span class="underline">+{selectedTutor.subjects.filter(s => !selectedSubjects.includes(s)).length - 10} more subjects</span>
+                          </button>
+                        </li>
+                      {:else if showAllSubjects && selectedTutor.subjects.filter(s => !selectedSubjects.includes(s)).length > 10}
+                        <li class="mt-2">
+                          <button 
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                            on:click={toggleShowAllSubjects}
+                          >
+                            <span class="underline">Show less</span>
+                          </button>
+                        </li>
+                      {/if}
                     </ul>
                   </div>
                 </div>
@@ -667,15 +802,15 @@
             Close
           </button>
           
-          <a 
-            href="/booking" 
+          <button 
             class="hidden md:flex px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors items-center font-medium"
+            on:click={(event) => openSubjectSelectionModal(selectedTutor, event)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
             </svg>
             Book a Session
-          </a>
+          </button>
         </div>
       </svelte:fragment>
     </Modal>
@@ -735,6 +870,194 @@
             on:click={() => subjectsModalOpen = false}
           >
             Close
+          </button>
+        </div>
+      </svelte:fragment>
+    </Modal>
+  {/if}
+  
+  <!-- Booking Modal (Calendly) -->
+  {#if bookingModalOpen && selectedTutor}
+    <Modal bind:open={bookingModalOpen}>
+      <svelte:fragment slot="header">
+        <div class="flex items-center justify-between w-full">
+          <h2 class="text-xl font-bold text-[#151f54]">Book a Session with {selectedTutor?.name || 'Tutor'}</h2>
+          <button
+            class="text-gray-500 hover:text-gray-700"
+            on:click={() => bookingModalOpen = false}
+            aria-label="Close booking dialog"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="content">
+        <div class="py-4">
+          <!-- Display selected subject -->
+          {#if selectedBookingSubject}
+            <div class="mb-6">
+              <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
+              <div class="flex flex-wrap">
+                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
+                  {selectedBookingSubject}
+                </span>
+              </div>
+            </div>
+          {/if}
+        
+          {#if selectedTutor.calendlyLink}
+            <p class="text-gray-700 mb-4">
+              Choose a time slot that works for you to schedule a session with {selectedTutor.name}.
+            </p>
+            
+            <!-- Calendly inline widget -->
+            <div class="calendly-inline-widget" data-url={getCalendlyUrl(selectedTutor)} style="min-width:320px;height:700px;"></div>
+          {:else}
+            <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <h3 class="text-lg font-semibold text-gray-800 mb-2">Booking Not Available</h3>
+              <p class="text-gray-600 max-w-md">
+                {selectedTutor.name} is currently not available for direct booking. Please check back later or contact support for assistance.
+              </p>
+            </div>
+          {/if}
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="footer">
+        <div class="flex justify-end w-full">
+          <button
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2"
+            on:click={() => bookingModalOpen = false}
+          >
+            Close
+          </button>
+        </div>
+      </svelte:fragment>
+    </Modal>
+  {/if}
+  
+  <!-- Subject Selection Modal (before booking) -->
+  {#if subjectSelectionModalOpen && selectedTutor}
+    <Modal bind:open={subjectSelectionModalOpen}>
+      <svelte:fragment slot="header">
+        <div class="w-full">
+          <h2 class="text-xl font-bold text-[#151f54]">Select a Subject with {selectedTutor.name}</h2>
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="content">
+        <div class="py-4">
+          <p class="text-gray-700 mb-6">
+            Select one subject you'd like to work on with {selectedTutor.name}:
+          </p>
+          
+          {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
+            <!-- Selected subject display -->
+            {#if selectedBookingSubject}
+              <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
+                <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit">
+                  {selectedBookingSubject}
+                  <button 
+                    class="ml-2 text-blue-500 hover:text-blue-700"
+                    on:click={() => selectedBookingSubject = ''}
+                    aria-label="Remove {selectedBookingSubject}"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            {/if}
+            
+            <!-- Subject cards section -->
+            <div class="grid gap-3">
+              <!-- AP Subjects Section -->
+              {#if selectedTutor.subjects.some(s => s.includes('AP '))}
+                <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">AP Subjects</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                  {#each selectedTutor.subjects.filter(s => s.includes('AP ')) as subject}
+                    <button 
+                      type="button"
+                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
+                      class:bg-blue-50={selectedBookingSubject === subject}
+                      class:border-blue-300={selectedBookingSubject === subject}
+                      on:click={() => selectBookingSubject(subject)}
+                      aria-pressed={selectedBookingSubject === subject}
+                    >
+                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
+                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject.replace('AP ', '')}</h3>
+                      <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
+                        AP Course
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+              
+              <!-- Regular Subjects Section -->
+              {#if selectedTutor.subjects.some(s => !s.includes('AP '))}
+                <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">Regular Subjects</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                  {#each selectedTutor.subjects.filter(s => !s.includes('AP ')) as subject}
+                    <button 
+                      type="button"
+                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
+                      class:bg-blue-50={selectedBookingSubject === subject}
+                      class:border-blue-300={selectedBookingSubject === subject}
+                      on:click={() => selectBookingSubject(subject)}
+                      aria-pressed={selectedBookingSubject === subject}
+                    >
+                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
+                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject}</h3>
+                      <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
+                        Regular Course
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <div class="col-span-full text-center py-8">
+              <p class="text-gray-500">This tutor has no subjects specified.</p>
+            </div>
+          {/if}
+          
+        </div>
+      </svelte:fragment>
+      
+      <svelte:fragment slot="footer">
+        <div class="flex justify-between w-full">
+          <button
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:ring-offset-2"
+            on:click={() => subjectSelectionModalOpen = false}
+          >
+            Cancel
+          </button>
+          
+          <button
+            class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
+            on:click={() => {
+              subjectSelectionModalOpen = false;
+              if (selectedTutor) {
+                selectedTutor = selectedTutor;
+                bookingModalOpen = true;
+              }
+            }}
+            disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && !selectedBookingSubject}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+            </svg>
+            Continue to Booking
           </button>
         </div>
       </svelte:fragment>
