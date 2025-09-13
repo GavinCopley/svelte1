@@ -9,6 +9,7 @@ export interface Tutor {
   experience: string;
   bio: string;
   image: string;
+  calendlyLink?: string;
 }
 
 // Collection name constant
@@ -31,7 +32,8 @@ export const tutorService = {
         education: tutor.education || '',
         experience: tutor.experience || '',
         bio: tutor.bio || '',
-        image: tutor.image || ''
+        image: tutor.image || '',
+        calendlyLink: tutor.calendlyLink || ''
       }));
     } catch (error) {
       console.error('Error in tutorService.getAllTutors:', error);

@@ -319,7 +319,8 @@
     education: '',
     experience: '',
     bio: '',
-    image: ''
+    image: '',
+    calendlyLink: ''
   };
   
   // Form validation errors
@@ -330,6 +331,7 @@
     experience?: string;
     bio?: string;
     image?: string;
+    calendlyLink?: string;
   };
   let errors: FormErrors = {};
   
@@ -341,7 +343,8 @@
       education: '',
       experience: '',
       bio: '',
-      image: ''
+      image: '',
+      calendlyLink: ''
     };
     errors = {};
   }
@@ -414,6 +417,9 @@
     if (form.image && !/^https?:\/\/\S+$/i.test(form.image)) {
       errors.image = 'Image URL must be valid (or leave blank)';
     }
+    if (form.calendlyLink && !/^https?:\/\/calendly\.com\/\S+$/i.test(form.calendlyLink)) {
+      errors.calendlyLink = 'Calendly link must be a valid Calendly URL (e.g., https://calendly.com/username/event)';
+    }
     return Object.keys(errors).length === 0;
   }
   
@@ -429,7 +435,8 @@
         education: form.education.trim(),
         experience: form.experience.trim(),
         bio: form.bio.trim(),
-        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
+        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`,
+        calendlyLink: form.calendlyLink.trim()
       };
       
       console.log("Adding new tutor to Firestore:", newTutor);
@@ -465,7 +472,8 @@
         education: selectedTutor.education,
         experience: selectedTutor.experience,
         bio: selectedTutor.bio,
-        image: selectedTutor.image
+        image: selectedTutor.image,
+        calendlyLink: selectedTutor.calendlyLink || ''
       };
       // Close the modal
       modalOpen = false;
@@ -486,7 +494,8 @@
         education: form.education.trim(),
         experience: form.experience.trim(),
         bio: form.bio.trim(),
-        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`
+        image: form.image.trim() || `https://placehold.co/200x200?text=${encodeURIComponent(form.name.trim().split(' ').map(n=>n[0]||'').join('').toUpperCase())}`,
+        calendlyLink: form.calendlyLink.trim()
       };
       
       console.log("Updating tutor in Firestore:", updatedTutor);
@@ -733,6 +742,22 @@
             <p class="mt-1 text-sm text-red-600">{errors.image}</p>
           {/if}
           <p class="mt-1 text-xs text-gray-500">If left blank, a placeholder with the tutor's initials will be used.</p>
+        </div>
+        
+        <!-- Calendly Link Field -->
+        <div class="form-group md:col-span-2">
+          <label for="tutor-calendly" class="block text-sm font-medium text-gray-700 mb-1">Calendly Link (optional)</label>
+          <input
+            id="tutor-calendly"
+            type="url"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#151f54] focus:border-[#151f54]"
+            placeholder="https://calendly.com/username/tutoring"
+            bind:value={form.calendlyLink}
+          />
+          {#if errors.calendlyLink}
+            <p class="mt-1 text-sm text-red-600">{errors.calendlyLink}</p>
+          {/if}
+          <p class="mt-1 text-xs text-gray-500">Your personal Calendly scheduling link for booking sessions.</p>
         </div>
       </div>
       
