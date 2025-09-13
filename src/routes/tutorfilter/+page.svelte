@@ -152,7 +152,29 @@
     }
     if (tutor) {
       selectedTutor = tutor;
-      // Reset the selected booking subject
+      
+      // If there's already a subject filter applied (from URL parameter),
+      // use that subject and skip directly to booking
+      if (selectedSubjects.length === 1 && tutor.subjects.some(s => 
+        s.toLowerCase() === selectedSubjects[0].toLowerCase() ||
+        s.toLowerCase().includes(selectedSubjects[0].toLowerCase()) ||
+        selectedSubjects[0].toLowerCase().includes(s.toLowerCase())
+      )) {
+        // Find the exact matching tutor subject
+        const matchingSubject = tutor.subjects.find(s => 
+          s.toLowerCase() === selectedSubjects[0].toLowerCase() ||
+          s.toLowerCase().includes(selectedSubjects[0].toLowerCase()) ||
+          selectedSubjects[0].toLowerCase().includes(s.toLowerCase())
+        );
+        
+        if (matchingSubject) {
+          selectedBookingSubject = matchingSubject;
+          bookingModalOpen = true;
+          return;
+        }
+      }
+      
+      // Otherwise, reset the selected booking subject and show the selection modal
       selectedBookingSubject = '';
       subjectSelectionModalOpen = true;
     }
@@ -880,17 +902,8 @@
   {#if bookingModalOpen && selectedTutor}
     <Modal bind:open={bookingModalOpen}>
       <svelte:fragment slot="header">
-        <div class="flex items-center justify-between w-full">
+        <div class="w-full">
           <h2 class="text-xl font-bold text-[#151f54]">Book a Session with {selectedTutor?.name || 'Tutor'}</h2>
-          <button
-            class="text-gray-500 hover:text-gray-700"
-            on:click={() => bookingModalOpen = false}
-            aria-label="Close booking dialog"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
       </svelte:fragment>
       

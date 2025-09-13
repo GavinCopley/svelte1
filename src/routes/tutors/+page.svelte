@@ -118,13 +118,14 @@
     }
   ];
   
-  // Function to handle subject selection
+  // Function to handle subject selection (only one subject at a time)
   function toggleSubject(subject: string) {
-    const index = selectedSubjects.indexOf(subject);
-    if (index === -1) {
-      selectedSubjects = [...selectedSubjects, subject];
+    if (selectedSubjects.length === 1 && selectedSubjects[0] === subject) {
+      // If clicking on already selected subject, deselect it
+      selectedSubjects = [];
     } else {
-      selectedSubjects = selectedSubjects.filter(s => s !== subject);
+      // Otherwise, select only this subject
+      selectedSubjects = [subject];
     }
   }
   
@@ -187,12 +188,16 @@
   // Function to open the booking modal with Calendly
   function openBookingModal() {
     if (selectedTutor) {
-      // If we don't have any subjects selected yet, use the subjects from the tutor
+      // If we don't have a subject selected yet, use the first subject from the tutor
       if (selectedSubjects.length === 0 && selectedTutor.subjects) {
         // Default to first subject if available
         if (selectedTutor.subjects.length > 0) {
           selectedSubjects = [selectedTutor.subjects[0]];
         }
+      }
+      // Ensure we have only one subject
+      if (selectedSubjects.length > 1) {
+        selectedSubjects = [selectedSubjects[0]];
       }
       bookingModalOpen = true;
     }
@@ -201,7 +206,31 @@
   // Function to open the subject selection modal before booking
   function openSubjectSelectionModal(tutor: Tutor) {
     selectedTutor = tutor;
-    // Initialize selected subjects to be empty
+    
+    // Check URL for subject parameter
+    if (browser) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const subjectParam = urlParams.get('subject');
+      
+      if (subjectParam && tutor.subjects) {
+        // Find a matching subject from the tutor's subjects
+        const decodedSubject = decodeURIComponent(subjectParam);
+        const matchingSubject = tutor.subjects.find(s => 
+          s.toLowerCase() === decodedSubject.toLowerCase() ||
+          s.toLowerCase().includes(decodedSubject.toLowerCase()) ||
+          decodedSubject.toLowerCase().includes(s.toLowerCase())
+        );
+        
+        if (matchingSubject) {
+          // If we have a match, skip subject selection and go straight to booking
+          selectedSubjects = [matchingSubject];
+          bookingModalOpen = true;
+          return;
+        }
+      }
+    }
+    
+    // Initialize selected subjects to be empty if no URL parameter match
     selectedSubjects = [];
     subjectSelectionModalOpen = true;
   }
@@ -1314,14 +1343,14 @@
     <svelte:fragment slot="content">
       <div class="py-4">
         <p class="text-gray-700 mb-6">
-          Select the subjects you'd like to work on with {selectedTutor.name}:
+          Select one subject you'd like to work on with {selectedTutor.name}:
         </p>
         
         {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
           <!-- Selected subjects display -->
           {#if selectedSubjects.length > 0}
             <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subjects ({selectedSubjects.length})</h3>
+              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
               <div class="flex flex-wrap gap-2">
                 {#each selectedSubjects as subject}
                   <div class="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
@@ -1420,7 +1449,7 @@
             subjectSelectionModalOpen = false;
             openBookingModal();
           }}
-          disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && selectedSubjects.length === 0}
+          disabled={selectedSubjects.length !== 1}
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
@@ -1443,15 +1472,14 @@
     
     <svelte:fragment slot="content">
       <div class="py-4">
-        {#if selectedSubjects.length > 0}
+        {#if selectedSubjects.length === 1}
           <div class="mb-6">
-            <h3 class="font-medium text-gray-700 mb-2">Selected Subjects:</h3>
-            <div class="flex flex-wrap gap-2">
-              {#each selectedSubjects as subject}
-                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
-                  {subject}
-                </span>
-              {/each}
+            <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
+            <div class="flex gap-2">
+              <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium flex items-center">
+                <span class="mr-2">{getSubjectEmoji(selectedSubjects[0])}</span>
+                {selectedSubjects[0]}
+              </span>
             </div>
           </div>
         {/if}
