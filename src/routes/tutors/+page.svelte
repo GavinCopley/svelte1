@@ -1,13 +1,6 @@
 <script lang="ts"> 
-  // Define Calendly interface for TypeScript
-  interface CalendlyWidget {
-    initInlineWidget: (options: {
-      url: string;
-      parentElement: HTMLElement | null;
-      prefill: any;
-      utm: any;
-    }) => void;
-  }
+  // Remove legacy Calendly script initialization to avoid conflicts with the CalendlyWidget component
+  // The widget now handles script/style loading and re-initialization
   
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
@@ -16,6 +9,9 @@
   import type { Tutor } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
   import { getEmoji } from '$lib/utils/emojiUtils';
+  // NEW: session info + calendly helper & widget
+  import { SessionInfoModal, CalendlyWidget } from '$lib';
+  import { buildCalendlyPrefill } from '$lib/utils/calendlyHelper';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
@@ -30,6 +26,9 @@
   // Booking modal state
   let bookingModalOpen = false;
   let subjectSelectionModalOpen = false; // For displaying subjects before booking
+  // NEW: pre-calendly session info state
+  let sessionInfoOpen = false;
+  let sessionPrefill: any = {};
   
   // Subject categories
   const subjectCategories = [
@@ -118,14 +117,13 @@
     }
   ];
   
-  // Function to handle subject selection (only one subject at a time)
+  // Function to handle subject selection
   function toggleSubject(subject: string) {
-    if (selectedSubjects.length === 1 && selectedSubjects[0] === subject) {
-      // If clicking on already selected subject, deselect it
-      selectedSubjects = [];
+    const index = selectedSubjects.indexOf(subject);
+    if (index === -1) {
+      selectedSubjects = [...selectedSubjects, subject];
     } else {
-      // Otherwise, select only this subject
-      selectedSubjects = [subject];
+      selectedSubjects = selectedSubjects.filter(s => s !== subject);
     }
   }
   
@@ -188,16 +186,12 @@
   // Function to open the booking modal with Calendly
   function openBookingModal() {
     if (selectedTutor) {
-      // If we don't have a subject selected yet, use the first subject from the tutor
+      // If we don't have any subjects selected yet, use the subjects from the tutor
       if (selectedSubjects.length === 0 && selectedTutor.subjects) {
         // Default to first subject if available
         if (selectedTutor.subjects.length > 0) {
           selectedSubjects = [selectedTutor.subjects[0]];
         }
-      }
-      // Ensure we have only one subject
-      if (selectedSubjects.length > 1) {
-        selectedSubjects = [selectedSubjects[0]];
       }
       bookingModalOpen = true;
     }
@@ -206,31 +200,7 @@
   // Function to open the subject selection modal before booking
   function openSubjectSelectionModal(tutor: Tutor) {
     selectedTutor = tutor;
-    
-    // Check URL for subject parameter
-    if (browser) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const subjectParam = urlParams.get('subject');
-      
-      if (subjectParam && tutor.subjects) {
-        // Find a matching subject from the tutor's subjects
-        const decodedSubject = decodeURIComponent(subjectParam);
-        const matchingSubject = tutor.subjects.find(s => 
-          s.toLowerCase() === decodedSubject.toLowerCase() ||
-          s.toLowerCase().includes(decodedSubject.toLowerCase()) ||
-          decodedSubject.toLowerCase().includes(s.toLowerCase())
-        );
-        
-        if (matchingSubject) {
-          // If we have a match, skip subject selection and go straight to booking
-          selectedSubjects = [matchingSubject];
-          bookingModalOpen = true;
-          return;
-        }
-      }
-    }
-    
-    // Initialize selected subjects to be empty if no URL parameter match
+    // Initialize selected subjects to be empty
     selectedSubjects = [];
     subjectSelectionModalOpen = true;
   }
@@ -238,17 +208,27 @@
   // Function to get a dynamic Calendly URL for a tutor
   function getCalendlyUrl(tutor: Tutor | null): string {
     if (!tutor) return '';
-    
-    // If the tutor has a calendlyLink, use that
-    if (tutor.calendlyLink) {
-      // Make sure it has the hide_gdpr_banner parameter
-      const url = new URL(tutor.calendlyLink);
+    const raw = (tutor.calendlyLink || '').trim();
+    if (!raw) return '';
+
+    // Normalize to a full https URL
+    let normalized = raw;
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`;
+    }
+    if (!/calendly\.com/i.test(normalized)) {
+      // If it's just a slug/username, build a Calendly URL
+      normalized = `https://calendly.com/${normalized.replace(/^\/+/, '')}`;
+    }
+
+    try {
+      const url = new URL(normalized);
       url.searchParams.set('hide_gdpr_banner', '1');
       return url.toString();
+    } catch (e) {
+      console.warn('Invalid Calendly URL for tutor:', tutor?.name, raw, e);
+      return '';
     }
-    
-    // Return empty string to indicate no Calendly link available
-    return '';
   }
   
   // Secret code detection
@@ -346,36 +326,6 @@
     };
   });
 
-  // Watch for changes to bookingModalOpen and load Calendly script when modal opens
-  $: {
-    if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
-      // Small delay to ensure the DOM is ready
-      setTimeout(() => {
-        const existingScript = document.querySelector('script[src*="calendly.com/assets/external/widget.js"]');
-        if (!existingScript) {
-          const script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.src = 'https://assets.calendly.com/assets/external/widget.js';
-          script.async = true;
-          document.body.appendChild(script);
-        }
-        // If script exists but we need to reinitialize Calendly
-        else {
-          // Access Calendly safely using indexing
-          const calendlyWidget = (window as any).Calendly as CalendlyWidget | undefined;
-          if (calendlyWidget) {
-            calendlyWidget.initInlineWidget({
-              url: getCalendlyUrl(selectedTutor),
-              parentElement: document.querySelector('.calendly-inline-widget'),
-              prefill: {},
-              utm: {}
-            });
-          }
-        }
-      }, 100);
-    }
-  }
-  
   // Form state for adding new tutors
   let showForm = false;
   
@@ -1099,7 +1049,7 @@
             on:click={openSubjectSelectionModal.bind(null, selectedTutor)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
             </svg>
             Book a Session
           </button>
@@ -1343,14 +1293,14 @@
     <svelte:fragment slot="content">
       <div class="py-4">
         <p class="text-gray-700 mb-6">
-          Select one subject you'd like to work on with {selectedTutor.name}:
+          Select the subjects you'd like to work on with {selectedTutor.name}:
         </p>
         
         {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
           <!-- Selected subjects display -->
           {#if selectedSubjects.length > 0}
             <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
+              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subjects ({selectedSubjects.length})</h3>
               <div class="flex flex-wrap gap-2">
                 {#each selectedSubjects as subject}
                   <div class="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
@@ -1447,20 +1397,21 @@
           class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
           on:click={() => {
             subjectSelectionModalOpen = false;
-            openBookingModal();
+            // NEW: open session info modal prior to Calendly
+            sessionInfoOpen = true;
           }}
-          disabled={selectedSubjects.length !== 1}
+          disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && selectedSubjects.length === 0}
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
           </svg>
-          Continue to Booking
+          Continue
         </button>
       </div>
     </svelte:fragment>
   </Modal>
 {/if}
-  
+
 <!-- Booking Modal (Calendly) -->
 {#if bookingModalOpen && selectedTutor}
   <Modal bind:open={bookingModalOpen}>
@@ -1472,25 +1423,26 @@
     
     <svelte:fragment slot="content">
       <div class="py-4">
-        {#if selectedSubjects.length === 1}
+        {#if selectedSubjects.length > 0}
           <div class="mb-6">
-            <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
-            <div class="flex gap-2">
-              <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium flex items-center">
-                <span class="mr-2">{getSubjectEmoji(selectedSubjects[0])}</span>
-                {selectedSubjects[0]}
-              </span>
+            <h3 class="font-medium text-gray-700 mb-2">Selected Subjects:</h3>
+            <div class="flex flex-wrap gap-2">
+              {#each selectedSubjects as subject}
+                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
+                  {subject}
+                </span>
+              {/each}
             </div>
           </div>
         {/if}
         
-        {#if selectedTutor.calendlyLink}
+        {#if getCalendlyUrl(selectedTutor)}
           <p class="text-gray-700 mb-4">
             Choose a time slot that works for you to schedule a session with {selectedTutor.name}.
           </p>
           
-          <!-- Calendly inline widget -->
-          <div class="calendly-inline-widget" data-url={getCalendlyUrl(selectedTutor)} style="min-width:320px;height:700px;"></div>
+          <!-- Calendly inline widget using component with prefill -->
+          <CalendlyWidget url={getCalendlyUrl(selectedTutor)} prefill={sessionPrefill} utm={{}} />
         {:else}
           <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1516,6 +1468,19 @@
       </div>
     </svelte:fragment>
   </Modal>
+{/if}
+
+<!-- NEW: Session Info Modal shown before Calendly -->
+{#if sessionInfoOpen && selectedTutor}
+  <SessionInfoModal
+    bind:open={sessionInfoOpen}
+    subject={selectedSubjects[0]}
+    on:submit={(e) => {
+      sessionPrefill = buildCalendlyPrefill(e.detail.answers);
+      bookingModalOpen = true;
+    }}
+    on:cancel={() => { sessionInfoOpen = false; }}
+  />
 {/if}
 
 <style lang="css">

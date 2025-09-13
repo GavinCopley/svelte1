@@ -17,6 +17,9 @@
   import type { Tutor } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
   import { getEmoji } from '$lib/utils/emojiUtils';
+  // NEW: session info + calendly helper & widget
+  import { SessionInfoModal, CalendlyWidget } from '$lib';
+  import { buildCalendlyPrefill, type SessionAnswers } from '$lib/utils/calendlyHelper';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
@@ -36,6 +39,9 @@
   let subjectSelectionModalOpen = false; // For selecting a subject before booking
   let bookingModalOpen = false; // For showing Calendly booking modal
   let showAllSubjects = false; // For showing all subjects in tutor profile
+  // NEW: pre-calendly session info modal state
+  let sessionInfoOpen = false;
+  let sessionPrefill: any = {};
   
   // Booking state
   let selectedBookingSubject: string = ''; // Only one subject can be selected for booking
@@ -152,29 +158,7 @@
     }
     if (tutor) {
       selectedTutor = tutor;
-      
-      // If there's already a subject filter applied (from URL parameter),
-      // use that subject and skip directly to booking
-      if (selectedSubjects.length === 1 && tutor.subjects.some(s => 
-        s.toLowerCase() === selectedSubjects[0].toLowerCase() ||
-        s.toLowerCase().includes(selectedSubjects[0].toLowerCase()) ||
-        selectedSubjects[0].toLowerCase().includes(s.toLowerCase())
-      )) {
-        // Find the exact matching tutor subject
-        const matchingSubject = tutor.subjects.find(s => 
-          s.toLowerCase() === selectedSubjects[0].toLowerCase() ||
-          s.toLowerCase().includes(selectedSubjects[0].toLowerCase()) ||
-          selectedSubjects[0].toLowerCase().includes(s.toLowerCase())
-        );
-        
-        if (matchingSubject) {
-          selectedBookingSubject = matchingSubject;
-          bookingModalOpen = true;
-          return;
-        }
-      }
-      
-      // Otherwise, reset the selected booking subject and show the selection modal
+      // Reset the selected booking subject
       selectedBookingSubject = '';
       subjectSelectionModalOpen = true;
     }
@@ -188,7 +172,8 @@
   // Function to proceed to booking after subject selection
   function proceedToBooking() {
     subjectSelectionModalOpen = false;
-    bookingModalOpen = true;
+    // NEW: open session info modal instead of Calendly directly
+    sessionInfoOpen = true;
   }
   
   // Function to toggle a subject filter
@@ -361,35 +346,12 @@
     }
   });
   
-  // Watch for changes to bookingModalOpen and load Calendly script when modal opens
-  $: {
-    if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
-      // Small delay to ensure the DOM is ready
-      setTimeout(() => {
-        const existingScript = document.querySelector('script[src*="calendly.com/assets/external/widget.js"]');
-        if (!existingScript) {
-          const script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.src = 'https://assets.calendly.com/assets/external/widget.js';
-          script.async = true;
-          document.body.appendChild(script);
-        }
-        // If script exists but we need to reinitialize Calendly
-        else {
-          // Access Calendly safely using indexing
-          const calendlyWidget = (window as any).Calendly as CalendlyWidget | undefined;
-          if (calendlyWidget) {
-            calendlyWidget.initInlineWidget({
-              url: getCalendlyUrl(selectedTutor),
-              parentElement: document.querySelector('.calendly-inline-widget'),
-              prefill: {},
-              utm: {}
-            });
-          }
-        }
-      }, 100);
-    }
-  }
+  // REMOVE direct Calendly re-init reactive block – handled by CalendlyWidget component now
+  // $: {
+  //   if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
+  //     // handled by CalendlyWidget
+  //   }
+  // }
   
   // Re-apply filters when selectedSubjects or searchQuery changes
   $: {
@@ -902,8 +864,17 @@
   {#if bookingModalOpen && selectedTutor}
     <Modal bind:open={bookingModalOpen}>
       <svelte:fragment slot="header">
-        <div class="w-full">
+        <div class="flex items-center justify-between w-full">
           <h2 class="text-xl font-bold text-[#151f54]">Book a Session with {selectedTutor?.name || 'Tutor'}</h2>
+          <button
+            class="text-gray-500 hover:text-gray-700"
+            on:click={() => bookingModalOpen = false}
+            aria-label="Close booking dialog"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </svelte:fragment>
       
@@ -925,9 +896,8 @@
             <p class="text-gray-700 mb-4">
               Choose a time slot that works for you to schedule a session with {selectedTutor.name}.
             </p>
-            
-            <!-- Calendly inline widget -->
-            <div class="calendly-inline-widget" data-url={getCalendlyUrl(selectedTutor)} style="min-width:320px;height:700px;"></div>
+            <!-- Calendly inline widget using component -->
+            <CalendlyWidget url={getCalendlyUrl(selectedTutor)} prefill={sessionPrefill} utm={{}} />
           {:else}
             <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -954,7 +924,7 @@
       </svelte:fragment>
     </Modal>
   {/if}
-  
+
   <!-- Subject Selection Modal (before booking) -->
   {#if subjectSelectionModalOpen && selectedTutor}
     <Modal bind:open={subjectSelectionModalOpen}>
@@ -1060,21 +1030,33 @@
             class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
             on:click={() => {
               subjectSelectionModalOpen = false;
-              if (selectedTutor) {
-                selectedTutor = selectedTutor;
-                bookingModalOpen = true;
-              }
+              // NEW: open session info modal next
+              sessionInfoOpen = true;
             }}
             disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && !selectedBookingSubject}
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
             </svg>
-            Continue to Booking
+            Continue
           </button>
         </div>
       </svelte:fragment>
     </Modal>
+  {/if}
+
+  <!-- NEW: Session Info Modal shown before Calendly -->
+  {#if sessionInfoOpen && selectedTutor}
+    <SessionInfoModal
+      bind:open={sessionInfoOpen}
+      subject={selectedBookingSubject}
+      on:submit={(e) => {
+        sessionPrefill = buildCalendlyPrefill(e.detail.answers);
+        // Open Calendly after collecting info
+        bookingModalOpen = true;
+      }}
+      on:cancel={() => { sessionInfoOpen = false; }}
+    />
   {/if}
 </div>
 
