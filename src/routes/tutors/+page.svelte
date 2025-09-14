@@ -31,6 +31,8 @@
   let sessionPrefill: any = {};
   // NEW: enforce single subject selection for booking
   let selectedBookingSubject: string = '';
+  // NEW: capture preferred subject from URL for preselection
+  let preferredSubjectFromParam: string = '';
   
   // Subject categories
   const subjectCategories = [
@@ -202,11 +204,16 @@
   // Function to open the subject selection modal before booking
   function openSubjectSelectionModal(tutor: Tutor) {
     selectedTutor = tutor;
-    // Initialize single selected subject for booking
-    selectedBookingSubject = '';
+    // Initialize single selected subject for booking, preferring URL param if tutor teaches it
+    const list = (tutor.subjects || []) as string[];
+    const match = preferredSubjectFromParam
+      ? (list.find(s => s.toLowerCase() === preferredSubjectFromParam.toLowerCase()) ||
+         list.find(s => s.toLowerCase().includes(preferredSubjectFromParam.toLowerCase())) || '')
+      : '';
+    selectedBookingSubject = match || list[0] || '';
     subjectSelectionModalOpen = true;
   }
-  
+
   // Function to get a dynamic Calendly URL for a tutor
   function getCalendlyUrl(tutor: Tutor | null): string {
     if (!tutor) return '';
@@ -240,6 +247,13 @@
   
   // Load tutors directly from Firestore with verbose logging
   onMount(() => {
+    // Capture subject from URL (if coming from Subjects/front page)
+    if (browser) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const subjectParam = urlParams.get('subject');
+      preferredSubjectFromParam = subjectParam ? decodeURIComponent(subjectParam) : '';
+    }
+
     const loadTutors = async () => {
       try {
         loading = true;
@@ -1303,8 +1317,9 @@
           {#if selectedBookingSubject}
             <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
-              <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit">
-                {selectedBookingSubject}
+              <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit gap-1.5">
+                <span aria-hidden="true">{getSubjectEmoji(selectedBookingSubject)}</span>
+                <span>{selectedBookingSubject}</span>
                 <button 
                   class="ml-2 text-blue-500 hover:text-blue-700"
                   on:click={() => selectedBookingSubject = ''}
@@ -1327,9 +1342,7 @@
                 {#each selectedTutor.subjects.filter(s => s.includes('AP ')) as subject}
                   <button 
                     type="button"
-                    class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                    class:bg-blue-50={selectedBookingSubject === subject}
-                    class:border-blue-300={selectedBookingSubject === subject}
+                    class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                     on:click={() => selectedBookingSubject = (selectedBookingSubject === subject ? '' : subject)}
                     aria-pressed={selectedBookingSubject === subject}
                   >
@@ -1350,9 +1363,7 @@
                 {#each selectedTutor.subjects.filter(s => !s.includes('AP ')) as subject}
                   <button 
                     type="button"
-                    class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                    class:bg-blue-50={selectedBookingSubject === subject}
-                    class:border-blue-300={selectedBookingSubject === subject}
+                    class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                     on:click={() => selectedBookingSubject = (selectedBookingSubject === subject ? '' : subject)}
                     aria-pressed={selectedBookingSubject === subject}
                   >
@@ -1371,7 +1382,6 @@
             <p class="text-gray-500">This tutor has no subjects specified.</p>
           </div>
         {/if}
-        
       </div>
     </svelte:fragment>
     
@@ -1418,20 +1428,10 @@
           <div class="mb-6">
             <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
             <div class="flex flex-wrap gap-2">
-              <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
-                {selectedBookingSubject}
+              <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1.5">
+                <span aria-hidden="true">{getSubjectEmoji(selectedBookingSubject)}</span>
+                <span>{selectedBookingSubject}</span>
               </span>
-            </div>
-          </div>
-        {:else if selectedSubjects.length > 0}
-          <div class="mb-6">
-            <h3 class="font-medium text-gray-700 mb-2">Selected Subjects:</h3>
-            <div class="flex flex-wrap gap-2">
-              {#each selectedSubjects as subject}
-                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
-                  {subject}
-                </span>
-              {/each}
             </div>
           </div>
         {/if}
@@ -1476,6 +1476,7 @@
     bind:open={sessionInfoOpen}
     subject={selectedBookingSubject}
     on:submit={(e) => {
+
       sessionPrefill = buildCalendlyPrefill(e.detail.answers);
       bookingModalOpen = true;
     }}

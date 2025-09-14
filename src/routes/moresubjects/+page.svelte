@@ -2,12 +2,12 @@
   import { fade, fly, scale } from 'svelte/transition';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
+  // import { goto } from '$app/navigation';
   import { subjectService, type Subject } from '$lib/services/subjectService';
   import { tutorService } from '$lib/services/tutorService';
   import { tick } from 'svelte';
   import { getEmoji, categoryEmojis } from '$lib';
-  import { SessionInfoModal } from '$lib';
+  // import { SessionInfoModal } from '$lib'; // Removed: no longer opening quiz from this page
   
   // Enhanced Subject interface that includes UI elements and tutor count
   interface EnhancedSubject extends Subject {
@@ -29,9 +29,9 @@
   let modalOpen = false;
   let activeSubject: EnhancedSubject | null = null;
   let isAPSelected = false;
-  // NEW: session info modal state for cross-flow prefill
-  let sessionInfoOpen = false;
-  let pendingSubjectName: string = '';
+  // NEW: removed session info modal state for cross-flow prefill (we navigate to tutor search instead)
+  // let sessionInfoOpen = false;
+  // let pendingSubjectName: string = '';
   
   // a11y helpers
   let dialogEl: HTMLElement | null = null;
@@ -199,10 +199,15 @@
       fullSubjectName = subjectName.replace(/^AP\s+/i, '');
     }
 
-    // Instead of immediate navigation, open SessionInfoModal with subject prefilled
-    pendingSubjectName = fullSubjectName;
+    // Redirect to tutor search page with subject filter (no quiz modal here)
+    const target = `/tutorfilter?subject=${encodeURIComponent(fullSubjectName)}`;
+    // Ensure body scroll is restored and modal closed before navigating
+    document.body.style.overflow = '';
     modalOpen = false;
-    sessionInfoOpen = true;
+    activeSubject = null;
+    if (typeof window !== 'undefined') {
+      window.location.href = target; // force hard navigation to avoid any lingering in-page state
+    }
   }
   
   // Additional subjects with descriptions
@@ -523,6 +528,9 @@
           error = "⚠️ Using fallback subject data. Tutor availability information is not accurate.";
         }
         
+        loading = false;
+      } finally {
+        // Ensure loading state is reset even if there was an error
         loading = false;
       }
     }
@@ -908,35 +916,7 @@
   </div>
 {/if}
 
-<!-- NEW: Session Info Modal to collect answers before routing to tutor selection -->
-{#if sessionInfoOpen}
-  <SessionInfoModal
-    bind:open={sessionInfoOpen}
-    subject={pendingSubjectName}
-    on:submit={(e) => {
-      const a = e.detail.answers;
-      const params = new URLSearchParams();
-      // push all fields as query params for tutorfilter to consume
-      params.set('name', a.name);
-      params.set('email', a.email);
-      params.set('a1', a.a1);
-      params.set('a2', a.a2);
-      params.set('a3', a.a3);
-      if (a.a4) params.set('a4', a.a4);
-      params.set('a5', a.a5 || pendingSubjectName);
-      params.set('a6', a.a6);
-      if (a.a7) params.set('a7', a.a7);
-      if (a.a8) params.set('a8', a.a8);
-      if (a.a9) params.set('a9', a.a9);
-      if (a.a10) params.set('a10', a.a10);
-      // also pass subject for convenience
-      if (pendingSubjectName && !params.get('subject')) params.set('subject', pendingSubjectName);
-      // navigate to tutorfilter with all info
-      goto(`/tutorfilter?${params.toString()}`);
-    }}
-    on:cancel={() => { sessionInfoOpen = false; }}
-  />
-{/if}
+<!-- Removed SessionInfoModal flow: we now redirect to tutor search page with subject filter -->
 
 <style>
   /* Background blobs & animations */

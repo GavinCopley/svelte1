@@ -45,7 +45,9 @@
   
   // Booking state
   let selectedBookingSubject: string = ''; // Only one subject can be selected for booking
-  
+  // NEW: remember preferred subject from URL parameter to auto-select in booking flow
+  let preferredSubjectFromParam: string = '';
+
   // Subject categories from the existing tutors page
   const subjectCategories = [
     {
@@ -158,8 +160,13 @@
     }
     if (tutor) {
       selectedTutor = tutor;
-      // Reset the selected booking subject
-      selectedBookingSubject = '';
+      // Auto-select subject based on URL param if available and taught by this tutor; else default to first subject
+      const list = (tutor.subjects || []) as string[];
+      const match = preferredSubjectFromParam
+        ? (list.find(s => s.toLowerCase() === preferredSubjectFromParam.toLowerCase()) ||
+           list.find(s => s.toLowerCase().includes(preferredSubjectFromParam.toLowerCase())) || '')
+        : '';
+      selectedBookingSubject = match || list[0] || '';
       subjectSelectionModalOpen = true;
     }
   }
@@ -270,7 +277,7 @@
     return getEmoji(mockSubject);
   }
   
-  // Load tutors from Firestore
+  // Load tutors and initialize filters from URL param
   onMount(async () => {
     try {
       loading = true;
@@ -327,6 +334,9 @@
         
         if (matchingSubject) {
           selectedSubjects = [matchingSubject];
+          preferredSubjectFromParam = matchingSubject; // remember for booking flow
+          // Also set default booking subject so Continue button isn't disabled later
+          selectedBookingSubject = matchingSubject;
         }
       }
       
@@ -345,13 +355,6 @@
       loading = false;
     }
   });
-  
-  // REMOVE direct Calendly re-init reactive block – handled by CalendlyWidget component now
-  // $: {
-  //   if (browser && bookingModalOpen && selectedTutor && selectedTutor.calendlyLink) {
-  //     // handled by CalendlyWidget
-  //   }
-  // }
   
   // Re-apply filters when selectedSubjects or searchQuery changes
   $: {
@@ -483,7 +486,8 @@
             <h3 class="text-sm font-medium text-gray-900 mb-2">Selected Filters</h3>
             <div class="flex flex-wrap gap-2">
               {#each selectedSubjects as subject}
-                <div class="bg-[#e8eaf6] flex items-center text-[#151f54] text-xs px-3 py-1 rounded-full">
+                <div class="bg-[#e8eaf6] flex items-center text-[#151f54] text-xs px-3 py-1 rounded-full gap-1.5">
+                  <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
                   <span>{subject}</span>
                   <button
                     class="ml-1 focus:outline-none hover:text-red-600"
@@ -555,11 +559,10 @@
                     <div class="mb-3">
                       <div class="flex items-center flex-wrap gap-2 mb-1">
                         <h3 class="text-2xl font-bold text-[#151f54]">{tutor.name}</h3>
-                        
-                        <!-- Display selected subjects first if present -->
                         {#each selectedSubjects.filter(s => tutor.subjects.includes(s)) as subject, i}
-                          <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
-                            {subject}
+                          <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
+                            <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
+                            <span>{subject}</span>
                           </span>
                         {/each}
                       </div>
@@ -653,8 +656,9 @@
             {#if selectedSubjects.some(s => selectedTutor!.subjects.includes(s))}
               <div class="flex flex-wrap gap-2">
                 {#each selectedSubjects.filter(s => selectedTutor!.subjects.includes(s)) as subject}
-                  <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                    {subject}
+                  <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full flex items-center gap-1.5">
+                    <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
+                    <span>{subject}</span>
                   </span>
                 {/each}
               </div>
@@ -704,7 +708,7 @@
                       <ul class="space-y-1.5">
                         {#each selectedSubjects.filter(s => selectedTutor!.subjects.includes(s)) as subject}
                           <li class="flex items-center">
-                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>
+                            <span class="mr-2 text-lg" aria-hidden="true">{getSubjectEmoji(subject)}</span>
                             <span class="text-blue-800 font-medium">{subject}</span>
                           </li>
                         {/each}
@@ -885,8 +889,9 @@
             <div class="mb-6">
               <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
               <div class="flex flex-wrap">
-                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
-                  {selectedBookingSubject}
+                <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1.5">
+                  <span aria-hidden="true">{getSubjectEmoji(selectedBookingSubject)}</span>
+                  <span>{selectedBookingSubject}</span>
                 </span>
               </div>
             </div>
@@ -945,8 +950,9 @@
             {#if selectedBookingSubject}
               <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
-                <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit">
-                  {selectedBookingSubject}
+                <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit gap-1.5">
+                  <span aria-hidden="true">{getSubjectEmoji(selectedBookingSubject)}</span>
+                  <span>{selectedBookingSubject}</span>
                   <button 
                     class="ml-2 text-blue-500 hover:text-blue-700"
                     on:click={() => selectedBookingSubject = ''}
@@ -962,16 +968,13 @@
             
             <!-- Subject cards section -->
             <div class="grid gap-3">
-              <!-- AP Subjects Section -->
               {#if selectedTutor.subjects.some(s => s.includes('AP '))}
                 <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">AP Subjects</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                   {#each selectedTutor.subjects.filter(s => s.includes('AP ')) as subject}
                     <button 
                       type="button"
-                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                      class:bg-blue-50={selectedBookingSubject === subject}
-                      class:border-blue-300={selectedBookingSubject === subject}
+                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                       on:click={() => selectBookingSubject(subject)}
                       aria-pressed={selectedBookingSubject === subject}
                     >
@@ -984,17 +987,13 @@
                   {/each}
                 </div>
               {/if}
-              
-              <!-- Regular Subjects Section -->
               {#if selectedTutor.subjects.some(s => !s.includes('AP '))}
                 <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">Regular Subjects</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                   {#each selectedTutor.subjects.filter(s => !s.includes('AP ')) as subject}
                     <button 
                       type="button"
-                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                      class:bg-blue-50={selectedBookingSubject === subject}
-                      class:border-blue-300={selectedBookingSubject === subject}
+                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                       on:click={() => selectBookingSubject(subject)}
                       aria-pressed={selectedBookingSubject === subject}
                     >
@@ -1013,7 +1012,6 @@
               <p class="text-gray-500">This tutor has no subjects specified.</p>
             </div>
           {/if}
-          
         </div>
       </svelte:fragment>
       
