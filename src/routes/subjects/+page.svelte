@@ -205,7 +205,30 @@
     if (browser) {
       const urlParams = new URLSearchParams(window.location.search);
       isTutorial = urlParams.get('tutorial') === 'true';
+      
+      // Add a global click handler to clear any lingering focus
+      document.addEventListener('click', (e) => {
+        // If we clicked anywhere except a button, clear focus from all buttons
+        if (!(e.target as Element).closest('button')) {
+          const buttons = document.querySelectorAll('button');
+          buttons.forEach(btn => btn.blur());
+        }
+      });
+      
+      // Prevent default focus behavior on all subject card buttons
+      const cardButtons = document.querySelectorAll('.group button');
+      cardButtons.forEach(button => {
+        button.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+        });
+      });
     }
+    
+    return () => {
+      if (browser) {
+        document.removeEventListener('click', () => {});
+      }
+    };
   });
 
   function getFocusable(root: HTMLElement) {
@@ -250,8 +273,12 @@
     // Clear active subject selection when closing the modal
     active = null;
     document.body.style.overflow = '';
-    // return focus to last trigger for a11y
-    lastTrigger?.focus();
+    // Remove focus from the trigger element to prevent browser highlighting
+    if (lastTrigger) {
+      lastTrigger.blur();
+    }
+    // Move focus back to document body instead
+    document.body.focus();
   }
 
   function onDialogKeydown(e: KeyboardEvent) {
@@ -401,8 +428,13 @@
           </div>
 
           <button
-            class="w-full text-left focus:outline-none flex flex-col"
-            on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
+            class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
+            on:click={(e) => {
+              openFor(s, e.currentTarget as HTMLElement);
+              // Prevent focus from lingering on this element
+              e.currentTarget.blur();
+            }}
+            on:mousedown={(e) => e.preventDefault()}
             aria-label={`Choose ${s.name}`}
           >
             <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
@@ -461,8 +493,13 @@
           </div>
 
           <button
-            class="w-full text-left focus:outline-none flex flex-col"
-            on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
+            class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
+            on:click={(e) => {
+              openFor(s, e.currentTarget as HTMLElement);
+              // Prevent focus from lingering on this element
+              e.currentTarget.blur();
+            }}
+            on:mousedown={(e) => e.preventDefault()}
             aria-label={`Choose ${s.name}`}
           >
             <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
@@ -645,6 +682,17 @@
 {/if}
 
 <style>
+  /* Global focus reset - disable browser's default focus highlighting */
+  :global(button:focus) {
+    outline: none !important;
+  }
+  
+  :global(.subject-card button:focus),
+  :global(.subject-card button:active) {
+    outline: none !important;
+    background-color: transparent !important;
+  }
+  
   /* ---------- Tutorial boxes ---------- */
   .tutorial-box {
     position: absolute;
@@ -829,6 +877,42 @@
   .why:hover{ transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,.14); }
   
   /* Subject card styles - selection styles removed */
+  /* Prevent browser default focus highlighting */
+  .group button:focus,
+  .group button:focus-visible,
+  .group button:active,
+  .group:focus,
+  .group:focus-within,
+  .group button:visited,
+  .group button:-moz-focusring {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Remove default focus styles from all buttons in subject cards */
+  .group button {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  .group button:focus,
+  .group button:active,
+  .group button:hover {
+    outline: none !important;
+  }
+  
+  /* Apply custom focus styles only when using keyboard navigation */
+  button.w-full.text-left:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  /* Remove focus styles for all buttons */
+  button::-moz-focus-inner {
+    border: 0;
+  }
 
   /* Card layout structure for consistent button alignment */
   .group.relative {
