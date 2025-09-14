@@ -173,7 +173,8 @@
   
   // Function to select a subject for booking
   function selectBookingSubject(subject: string) {
-    selectedBookingSubject = selectedBookingSubject === subject ? '' : subject;
+    // Changed behavior to always select the clicked subject (radio button behavior)
+    selectedBookingSubject = subject;
   }
   
   // Function to proceed to booking after subject selection
@@ -950,78 +951,104 @@
     <Modal bind:open={subjectSelectionModalOpen}>
       <svelte:fragment slot="header">
         <div class="w-full">
-          <h2 class="text-xl font-bold text-[#151f54]">Select a Subject with {selectedTutor.name}</h2>
+          <h2 class="text-xl font-bold text-[#151f54]">Book a Session with {selectedTutor.name}</h2>
         </div>
       </svelte:fragment>
       
       <svelte:fragment slot="content">
         <div class="py-4">
           <p class="text-gray-700 mb-6">
-            Select one subject you'd like to work on with {selectedTutor.name}:
+            Which subject would you like to work on with {selectedTutor.name}?
           </p>
           
           {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
-            <!-- Selected subject display -->
-            {#if selectedBookingSubject}
-              <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
-                <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit gap-1.5">
-                  <span aria-hidden="true">{getSubjectEmoji(selectedBookingSubject)}</span>
-                  <span>{selectedBookingSubject}</span>
-                  <button 
-                    class="ml-2 text-blue-500 hover:text-blue-700"
-                    on:click={() => selectedBookingSubject = ''}
-                    aria-label="Remove {selectedBookingSubject}"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            {/if}
-            
-            <!-- Subject cards section -->
+            <!-- Subject cards section with radio button-like selection -->
             <div class="grid gap-3">
               {#if selectedTutor.subjects.some(s => s.includes('AP '))}
                 <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">AP Subjects</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                   {#each selectedTutor.subjects.filter(s => s.includes('AP ')) as subject}
                     <button 
                       type="button"
-                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
+                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex items-center text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                       on:click={() => selectBookingSubject(subject)}
                       aria-pressed={selectedBookingSubject === subject}
                     >
-                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
-                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject.replace('AP ', '')}</h3>
-                      <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
-                        AP Course
-                      </span>
+                      <div class={`flex-shrink-0 w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${selectedBookingSubject === subject ? 'border-blue-700 bg-blue-700' : 'border-gray-300'}`}>
+                        {#if selectedBookingSubject === subject}
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          </svg>
+                        {/if}
+                      </div>
+                      
+                      <div class="flex-1">
+                        <div class="flex items-center">
+                          <span class="text-2xl mr-2">{getSubjectEmoji(subject)}</span>
+                          <h3 class="text-base font-semibold text-[#151f54]">{subject.replace('AP ', '')}</h3>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block mt-1">
+                          AP Course
+                        </span>
+                      </div>
                     </button>
                   {/each}
                 </div>
               {/if}
               {#if selectedTutor.subjects.some(s => !s.includes('AP '))}
                 <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">Regular Subjects</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                   {#each selectedTutor.subjects.filter(s => !s.includes('AP ')) as subject}
                     <button 
                       type="button"
-                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
+                      class={`relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex items-center text-left w-full ${selectedBookingSubject === subject ? 'ring-2 ring-blue-700 border-blue-700 bg-blue-50' : ''}`}
                       on:click={() => selectBookingSubject(subject)}
                       aria-pressed={selectedBookingSubject === subject}
                     >
-                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
-                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject}</h3>
-                      <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
-                        Regular Course
-                      </span>
+                      <div class={`flex-shrink-0 w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${selectedBookingSubject === subject ? 'border-blue-700 bg-blue-700' : 'border-gray-300'}`}>
+                        {#if selectedBookingSubject === subject}
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          </svg>
+                        {/if}
+                      </div>
+                      
+                      <div class="flex-1">
+                        <div class="flex items-center">
+                          <span class="text-2xl mr-2">{getSubjectEmoji(subject)}</span>
+                          <h3 class="text-base font-semibold text-[#151f54]">{subject}</h3>
+                        </div>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full inline-block mt-1">
+                          Regular Course
+                        </span>
+                      </div>
                     </button>
                   {/each}
                 </div>
               {/if}
             </div>
+            
+            <!-- Summary of selected subject at bottom -->
+            {#if selectedBookingSubject}
+              <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="text-2xl mr-2">{getSubjectEmoji(selectedBookingSubject)}</div>
+                    <div>
+                      <p class="text-sm text-gray-500">You selected:</p>
+                      <p class="font-semibold text-[#151f54]">{selectedBookingSubject}</p>
+                    </div>
+                  </div>
+                  <button 
+                    class="text-gray-500 hover:text-gray-700 px-2 py-1 rounded-md hover:bg-gray-100"
+                    on:click={() => selectedBookingSubject = ''}
+                    aria-label="Change selection"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
+            {/if}
           {:else}
             <div class="col-span-full text-center py-8">
               <p class="text-gray-500">This tutor has no subjects specified.</p>
@@ -1051,7 +1078,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
             </svg>
-            Continue
+            {selectedBookingSubject ? 'Continue with ' + selectedBookingSubject.split(' ').slice(0, 2).join(' ') : 'Select a subject'}
           </button>
         </div>
       </svelte:fragment>
