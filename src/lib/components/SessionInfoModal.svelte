@@ -121,7 +121,7 @@
 </script>
 
 {#if open}
-  <Modal bind:open title="Tell us what you need (15–20 sec)">
+  <Modal bind:open title="Let us know how we can prepare for our call">
     <svelte:fragment slot="content">
       <div class="space-y-6">
         <!-- Contact -->
