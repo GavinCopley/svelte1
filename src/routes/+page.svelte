@@ -122,15 +122,30 @@
       return;
     }
     
-    const results = fuse.search(searchQuery);
-    searchResults = results.map(result => result.item);
+    // First check for exact matches (case-insensitive)
+    const exactMatches = allSubjects.filter(item => 
+      item.subject.toLowerCase() === searchQuery.toLowerCase()
+    );
+    
+    // Then use Fuse.js for fuzzy searching
+    const fuseResults = fuse.search(searchQuery);
+    const fuzzyMatches = fuseResults
+      .map(result => result.item)
+      // Filter out any exact matches to avoid duplicates
+      .filter(item => !exactMatches.some(exact => 
+        exact.subject.toLowerCase() === item.subject.toLowerCase()
+      ));
+    
+    // Combine exact matches first, then fuzzy matches
+    searchResults = [...exactMatches, ...fuzzyMatches];
     showResults = true;
   }
   
   // Handle subject selection
   function selectSubject(subject: string) {
-    // Navigate to subjects page with the selected subject as a parameter
-    window.location.href = `/subjects?subject=${encodeURIComponent(subject)}`;
+    // Navigate to tutorfilter page with the selected subject as a parameter
+    // Use exact=true to prevent tutorfilter from trying to find partial matches
+    window.location.href = `/tutorfilter?subject=${encodeURIComponent(subject)}&exact=true`;
   }
 
   function handleGetStarted() {
@@ -239,13 +254,21 @@
         <!-- Search Results -->
         {#if showResults && searchResults.length > 0}
           <div class="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto" transition:fade={{ duration: 200 }}>
+            <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 border-b border-gray-200">
+              Select a subject to find tutors
+            </div>
             <ul class="py-2 divide-y divide-gray-100">
               {#each searchResults as result, i}
                 <li 
                   class="px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors flex flex-col items-start text-left"
                   on:click={() => selectSubject(result.subject)}
                 >
-                  <span class="font-medium text-[#151f54]">{result.subject}</span>
+                  <div class="flex items-center">
+                    <span class="font-medium text-[#151f54]">{result.subject}</span>
+                    {#if searchQuery && result.subject.toLowerCase() !== searchQuery.toLowerCase() && result.subject.toLowerCase().includes(searchQuery.toLowerCase())}
+                      <span class="ml-2 text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">Exact match</span>
+                    {/if}
+                  </div>
                   <span class="text-xs text-gray-500">{result.category}</span>
                 </li>
               {/each}

@@ -326,17 +326,41 @@
       if (subjectParam) {
         // Find the closest subject match
         const decodedSubject = decodeURIComponent(subjectParam);
-        const matchingSubject = allSubjects.find(s => 
-          s.toLowerCase() === decodedSubject.toLowerCase() ||
-          s.toLowerCase().includes(decodedSubject.toLowerCase()) ||
-          decodedSubject.toLowerCase().includes(s.toLowerCase())
-        );
+        const exactMatch = urlParams.get('exact') === 'true';
+        
+        // If exact match is requested, only look for exact matches
+        let matchingSubject;
+        if (exactMatch) {
+          matchingSubject = allSubjects.find(s => 
+            s.toLowerCase() === decodedSubject.toLowerCase()
+          );
+          
+          // If no exact match found, fall back to the original behavior
+          if (!matchingSubject) {
+            matchingSubject = allSubjects.find(s => 
+              s.toLowerCase().includes(decodedSubject.toLowerCase()) ||
+              decodedSubject.toLowerCase().includes(s.toLowerCase())
+            );
+          }
+        } else {
+          // Original behavior - find any matching subject
+          matchingSubject = allSubjects.find(s => 
+            s.toLowerCase() === decodedSubject.toLowerCase() ||
+            s.toLowerCase().includes(decodedSubject.toLowerCase()) ||
+            decodedSubject.toLowerCase().includes(s.toLowerCase())
+          );
+        }
         
         if (matchingSubject) {
           selectedSubjects = [matchingSubject];
           preferredSubjectFromParam = matchingSubject; // remember for booking flow
           // Also set default booking subject so Continue button isn't disabled later
           selectedBookingSubject = matchingSubject;
+        } else if (exactMatch) {
+          // If exact match was requested but not found, use the original subject as is
+          selectedSubjects = [decodedSubject];
+          preferredSubjectFromParam = decodedSubject;
+          selectedBookingSubject = decodedSubject;
         }
       }
       
