@@ -957,6 +957,43 @@
       
       <svelte:fragment slot="content">
         <div class="py-4">
+          <!-- Summary of selected subject at TOP -->
+          {#if selectedBookingSubject}
+            <div class="mb-6 pb-4 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="text-2xl mr-2">{getSubjectEmoji(selectedBookingSubject)}</div>
+                  <div>
+                    <p class="text-sm text-gray-500">You selected:</p>
+                    <p class="font-semibold text-[#151f54]">{selectedBookingSubject}</p>
+                  </div>
+                </div>
+                <button 
+                  class="text-gray-500 hover:text-gray-700 px-2 py-1 rounded-md hover:bg-gray-100"
+                  on:click={() => selectedBookingSubject = ''}
+                  aria-label="Change selection"
+                >
+                  Change
+                </button>
+              </div>
+              
+              <!-- Continue button at TOP -->
+              <button
+                class="w-full mt-4 px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center justify-center"
+                on:click={() => {
+                  subjectSelectionModalOpen = false;
+                  // NEW: open session info modal next
+                  sessionInfoOpen = true;
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                </svg>
+                Continue with {selectedBookingSubject.split(' ').slice(0, 2).join(' ')}
+              </button>
+            </div>
+          {/if}
+
           <p class="text-gray-700 mb-6">
             Which subject would you like to work on with {selectedTutor.name}?
           </p>
@@ -1027,28 +1064,6 @@
                 </div>
               {/if}
             </div>
-            
-            <!-- Summary of selected subject at bottom -->
-            {#if selectedBookingSubject}
-              <div class="mt-4 pt-4 border-t border-gray-200">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center">
-                    <div class="text-2xl mr-2">{getSubjectEmoji(selectedBookingSubject)}</div>
-                    <div>
-                      <p class="text-sm text-gray-500">You selected:</p>
-                      <p class="font-semibold text-[#151f54]">{selectedBookingSubject}</p>
-                    </div>
-                  </div>
-                  <button 
-                    class="text-gray-500 hover:text-gray-700 px-2 py-1 rounded-md hover:bg-gray-100"
-                    on:click={() => selectedBookingSubject = ''}
-                    aria-label="Change selection"
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-            {/if}
           {:else}
             <div class="col-span-full text-center py-8">
               <p class="text-gray-500">This tutor has no subjects specified.</p>
@@ -1066,20 +1081,17 @@
             Cancel
           </button>
           
-          <button
-            class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
-            on:click={() => {
-              subjectSelectionModalOpen = false;
-              // NEW: open session info modal next
-              sessionInfoOpen = true;
-            }}
-            disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && !selectedBookingSubject}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-            </svg>
-            {selectedBookingSubject ? 'Continue with ' + selectedBookingSubject.split(' ').slice(0, 2).join(' ') : 'Select a subject'}
-          </button>
+          {#if !selectedBookingSubject}
+            <button
+              class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#151f54]"
+              disabled={true}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+              </svg>
+              Select a subject
+            </button>
+          {/if}
         </div>
       </svelte:fragment>
     </Modal>
