@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { Modal } from '$lib/components';
+  import DatePickerModal from './DatePickerModal.svelte';
   import type { MainGoal, Urgency, Confidence, PreferredStyle, SessionAnswers } from '$lib/utils/calendlyHelper';
 
   export let open = false;
@@ -76,8 +77,7 @@
       const parts = a8.split(',').map((p) => p.trim()).filter(Boolean);
       const invalid = parts.filter((p) => !/^https?:\/\//i.test(p));
       if (invalid.length && invalid.length === parts.length) {
-        // if none look like URLs, still allow (as plain text). Only flag if some look bad while others good
-        // No error in that case per tolerant spec
+        // tolerate plain text; no error per spec
       }
     }
     return Object.keys(errors).length === 0;
@@ -107,6 +107,17 @@
     dispatch('cancel');
     open = false;
   }
+
+  // Date picker modal state
+  let datePickerOpen = false;
+  function onDatePicked(dateLabel: string) {
+    // If a7 already has text, append date in parentheses; else set to date
+    if (a7 && !/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(a7)) {
+      a7 = `${a7} (${dateLabel})`;
+    } else {
+      a7 = dateLabel;
+    }
+  }
 </script>
 
 {#if open}
@@ -114,100 +125,139 @@
     <svelte:fragment slot="content">
       <div class="space-y-6">
         <!-- Contact -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label for="nameInput" class="block text-sm font-medium text-gray-700">Name *</label>
-            <input
-              id="nameInput"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
-              placeholder="Full name"
-              bind:value={name}
-              aria-invalid={!!errors.name}
-              aria-describedby="name-hint name-err"
-            />
-            <p id="name-hint" class="text-xs text-gray-500 mt-1">2–60 chars</p>
-            {#if errors.name}<p id="name-err" class="text-xs text-red-600 mt-1">{errors.name}</p>{/if}
+        <div class="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 p-4 sm:p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="h-1 w-6 rounded-full bg-gradient-to-r from-blue-300 via-blue-600 to-blue-300"></div>
+            <h3 class="text-sm font-semibold text-[#151f54]">Contact</h3>
           </div>
-          <div>
-            <label for="emailInput" class="block text-sm font-medium text-gray-700">Email *</label>
-            <input
-              id="emailInput"
-              type="email"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
-              placeholder="name@email.com"
-              bind:value={email}
-              aria-invalid={!!errors.email}
-              aria-describedby="email-err"
-            />
-            {#if errors.email}<p id="email-err" class="text-xs text-red-600 mt-1">{errors.email}</p>{/if}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="nameInput" class="block text-sm font-medium text-[#0f1a3f]">Name *</label>
+              <input
+                id="nameInput"
+                class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
+                placeholder="Full name"
+                bind:value={name}
+                aria-invalid={!!errors.name}
+                aria-describedby="name-hint name-err"
+              />
+              <p id="name-hint" class="text-xs text-gray-500 mt-1">2–60 chars</p>
+              {#if errors.name}<p id="name-err" class="text-xs text-red-600 mt-1">{errors.name}</p>{/if}
+            </div>
+            <div>
+              <label for="emailInput" class="block text-sm font-medium text-[#0f1a3f]">Email *</label>
+              <input
+                id="emailInput"
+                type="email"
+                class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
+                placeholder="name@email.com"
+                bind:value={email}
+                aria-invalid={!!errors.email}
+                aria-describedby="email-err"
+              />
+              {#if errors.email}<p id="email-err" class="text-xs text-red-600 mt-1">{errors.email}</p>{/if}
+            </div>
           </div>
         </div>
 
+        <!-- Divider -->
+        <div class="relative my-2">
+          <div class="h-px w-full bg-gradient-to-r from-blue-200 via-blue-500 to-blue-200"></div>
+        </div>
+
         <!-- Multiple Choice -->
-        <div class="space-y-5">
+        <div class="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 p-4 sm:p-5 shadow-sm space-y-5">
+          <div class="flex items-center gap-2">
+            <div class="h-1 w-6 rounded-full bg-gradient-to-r from-blue-300 via-blue-600 to-blue-300"></div>
+            <h3 class="text-sm font-semibold text-[#151f54]">Multiple choice</h3>
+          </div>
+
           <fieldset>
-            <legend class="block text-sm font-medium text-gray-700">Main Goal of the Session *</legend>
+            <legend class="block text-sm font-medium text-[#0f1a3f]">Main Goal of the Session *</legend>
             <p class="text-xs text-gray-500 mb-2">Pick the main purpose so we prep the right way.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="space-y-2" role="radiogroup" aria-label="Main Goal">
               {#each goalOptions as opt}
-                <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="a1" value={opt} bind:group={a1} />
-                  <span class="text-sm">{opt}</span>
+                <label class={`group flex items-start gap-3 rounded-lg border px-3 py-3 bg-white/90 hover:bg-blue-50 focus-within:ring-2 focus-within:ring-[#1e3a8a] ${a1===opt ? 'border-[#1e3a8a] bg-blue-50/70' : 'border-blue-200/70'}`}
+                >
+                  <input class="mt-0.5 h-4 w-4 text-[#1e3a8a] border-blue-300 focus:ring-[#1e3a8a]" type="radio" name="a1" value={opt} bind:group={a1} aria-label={opt} />
+                  <span class="text-sm text-[#0f1a3f]">{opt}</span>
                 </label>
               {/each}
             </div>
             {#if errors.a1}<p class="text-xs text-red-600 mt-1">{errors.a1}</p>{/if}
           </fieldset>
 
+          <!-- Question divider -->
+          <div class="my-2 h-px w-full bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+
           <fieldset>
-            <legend class="block text-sm font-medium text-gray-700">Urgency *</legend>
+            <legend class="block text-sm font-medium text-[#0f1a3f]">Urgency *</legend>
             <p class="text-xs text-gray-500 mb-2">When do you need this by?</p>
-            <div class="flex flex-wrap gap-2">
+            <div class="space-y-2" role="radiogroup" aria-label="Urgency">
               {#each urgencyOptions as opt}
-                <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="a2" value={opt} bind:group={a2} />
-                  <span class="text-sm">{opt}</span>
+                <label class={`group flex items-start gap-3 rounded-lg border px-3 py-3 bg-white/90 hover:bg-blue-50 focus-within:ring-2 focus-within:ring-[#1e3a8a] ${a2===opt ? 'border-[#1e3a8a] bg-blue-50/70' : 'border-blue-200/70'}`}
+                >
+                  <input class="mt-0.5 h-4 w-4 text-[#1e3a8a] border-blue-300 focus:ring-[#1e3a8a]" type="radio" name="a2" value={opt} bind:group={a2} aria-label={opt} />
+                  <span class="text-sm text-[#0f1a3f]">{opt}</span>
                 </label>
               {/each}
             </div>
             {#if errors.a2}<p class="text-xs text-red-600 mt-1">{errors.a2}</p>{/if}
           </fieldset>
 
+          <!-- Question divider -->
+          <div class="my-2 h-px w-full bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+
           <fieldset>
-            <legend class="block text-sm font-medium text-gray-700">Current Confidence Level *</legend>
+            <legend class="block text-sm font-medium text-[#0f1a3f]">Current Confidence Level *</legend>
             <p class="text-xs text-gray-500 mb-2">How are you feeling on this topic?</p>
-            <div class="space-y-2">
+            <div class="space-y-2" role="radiogroup" aria-label="Confidence">
               {#each confidenceOptions as opt}
-                <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="a3" value={opt} bind:group={a3} />
-                  <span class="text-sm">{opt}</span>
+                <label class={`group flex items-start gap-3 rounded-lg border px-3 py-3 bg-white/90 hover:bg-blue-50 focus-within:ring-2 focus-within:ring-[#1e3a8a] ${a3===opt ? 'border-[#1e3a8a] bg-blue-50/70' : 'border-blue-200/70'}`}
+                >
+                  <input class="mt-0.5 h-4 w-4 text-[#1e3a8a] border-blue-300 focus:ring-[#1e3a8a]" type="radio" name="a3" value={opt} bind:group={a3} aria-label={opt} />
+                  <span class="text-sm text-[#0f1a3f]">{opt}</span>
                 </label>
               {/each}
             </div>
             {#if errors.a3}<p class="text-xs text-red-600 mt-1">{errors.a3}</p>{/if}
           </fieldset>
 
+          <!-- Question divider -->
+          <div class="my-2 h-px w-full bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+
           <fieldset>
-            <legend class="block text-sm font-medium text-gray-700">Preferred Style of Support (optional)</legend>
+            <legend class="block text-sm font-medium text-[#0f1a3f]">Preferred Style of Support (optional)</legend>
             <p class="text-xs text-gray-500 mb-2">We’ll match our approach to you.</p>
-            <div class="flex flex-wrap gap-2">
+            <div class="space-y-2" role="radiogroup" aria-label="Preferred Style">
               {#each styleOptions as opt}
-                <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="a4" value={opt} bind:group={a4} on:change={suggestNotes} />
-                  <span class="text-sm">{opt}</span>
+                <label class={`group flex items-start gap-3 rounded-lg border px-3 py-3 bg-white/90 hover:bg-blue-50 focus-within:ring-2 focus-within:ring-[#1e3a8a] ${a4===opt ? 'border-[#1e3a8a] bg-blue-50/70' : 'border-blue-200/70'}`}
+                >
+                  <input class="mt-0.5 h-4 w-4 text-[#1e3a8a] border-blue-300 focus:ring-[#1e3a8a]" type="radio" name="a4" value={opt} bind:group={a4} on:change={suggestNotes} aria-label={opt} />
+                  <span class="text-sm text-[#0f1a3f]">{opt}</span>
                 </label>
               {/each}
             </div>
           </fieldset>
         </div>
 
+        <!-- Divider -->
+        <div class="relative my-2">
+          <div class="h-px w-full bg-gradient-to-r from-blue-200 via-blue-500 to-blue-200"></div>
+        </div>
+
         <!-- Free Response -->
-        <div class="space-y-5">
+        <div class="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 p-4 sm:p-5 shadow-sm space-y-5">
+          <div class="flex items-center gap-2">
+            <div class="h-1 w-6 rounded-full bg-gradient-to-r from-blue-300 via-blue-600 to-blue-300"></div>
+            <h3 class="text-sm font-semibold text-[#151f54]">Details</h3>
+          </div>
+
           <div>
-            <label for="a5Input" class="block text-sm font-medium text-gray-700">Subject / Course *</label>
+            <label for="a5Input" class="block text-sm font-medium text-[#0f1a3f]">Subject / Course *</label>
             <input
               id="a5Input"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
+              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
               placeholder="AP Calculus AB"
               bind:value={a5}
               aria-invalid={!!errors.a5}
@@ -218,10 +268,10 @@
           </div>
 
           <div>
-            <label for="a6Input" class="block text-sm font-medium text-gray-700">Specific Topic / Chapter / Skill *</label>
+            <label for="a6Input" class="block text-sm font-medium text-[#0f1a3f]">Specific Topic / Chapter / Skill *</label>
             <input
               id="a6Input"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
+              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
               placeholder={
                 a5 && a5.toLowerCase().includes('lang') ? 'passage analysis, FRQ2' :
                 a5 && (a5.toLowerCase().includes('spanish') || a5.toLowerCase().includes('french') || a5.toLowerCase().includes('latin')) ? 'interpretive reading/listening; presentational writing' :
@@ -238,25 +288,29 @@
           </div>
 
           <div>
-            <label for="a7Input" class="block text-sm font-medium text-gray-700">Upcoming assignment/project/exam? Include date (optional)</label>
-            <div class="mt-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+            <label for="a7Input" class="block text-sm font-medium text-[#0f1a3f]">Upcoming assignment/project/exam? Include date (optional)</label>
+            <div class="mt-1 flex gap-2 items-center">
               <input
                 id="a7Input"
-                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
+                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
                 placeholder="Unit test Friday 10/03; essay due Monday"
                 bind:value={a7}
               />
-              {#if a1 === 'Test/quiz prep'}
-                <input type="date" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]" on:change={(e)=>{ const v=(e.target as HTMLInputElement).value; a7 = a7 ? `${a7} (${v})` : v; }} />
-              {/if}
+              <button type="button" class="shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-gradient-to-b from-white to-blue-50 text-[#0f1a3f] hover:from-blue-50 hover:to-blue-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                on:click={() => (datePickerOpen = true)}
+                aria-label="Open date picker"
+              >
+                <!-- calendar icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm14 9H3v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9Z"/></svg>
+              </button>
             </div>
           </div>
 
           <div>
-            <label for="a8Input" class="block text-sm font-medium text-gray-700">Materials link(s) (optional)</label>
+            <label for="a8Input" class="block text-sm font-medium text-[#0f1a3f]">Materials link(s) (optional)</label>
             <input
               id="a8Input"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
+              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
               placeholder="Drive/Docs/Photos links"
               bind:value={a8}
             />
@@ -264,11 +318,11 @@
           </div>
 
           <div>
-            <label for="a9Textarea" class="block text-sm font-medium text-gray-700">Anything else that would help your tutor prepare? (optional)</label>
+            <label for="a9Textarea" class="block text-sm font-medium text-[#0f1a3f]">Anything else that would help your tutor prepare? (optional)</label>
             <textarea
               id="a9Textarea"
               rows="3"
-              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]"
+              class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90"
               placeholder="I struggle with timed tests; prefer visuals; TI-84; IEP accommodations."
               bind:value={a9}
             ></textarea>
@@ -279,8 +333,8 @@
           </div>
 
           <div>
-            <label for="a10Select" class="block text-sm font-medium text-gray-700">Grade / Level (optional)</label>
-            <select id="a10Select" class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#151f54]" bind:value={a10}>
+            <label for="a10Select" class="block text-sm font-medium text-[#0f1a3f]">Grade / Level (optional)</label>
+            <select id="a10Select" class="mt-1 w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#1e3a8a] border-blue-200/70 bg-white/90" bind:value={a10}>
               <option value="">Select</option>
               <option>6–8</option>
               <option>9–10</option>
@@ -300,9 +354,16 @@
 
     <svelte:fragment slot="footer">
       <div class="flex justify-between w-full">
-        <button class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50" on:click={cancel}>Cancel</button>
-        <button class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e]" on:click={continueToScheduling}>Continue to scheduling</button>
+        <button class="px-4 py-2 border border-blue-200 rounded-md text-[#0f1a3f] bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" on:click={cancel}>Cancel</button>
+        <button class="px-4 py-2 bg-[#151f54] text-white rounded-md hover:bg-[#212d6e] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" on:click={continueToScheduling}>Continue to scheduling</button>
       </div>
     </svelte:fragment>
   </Modal>
+
+  {#if datePickerOpen}
+    <DatePickerModal
+      bind:open={datePickerOpen}
+      on:pick={(e: CustomEvent<{ label: string; date: Date }>) => onDatePicked(e.detail.label)}
+    />
+  {/if}
 {/if}
