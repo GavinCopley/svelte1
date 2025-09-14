@@ -141,7 +141,7 @@
                 aria-invalid={!!errors.name}
                 aria-describedby="name-hint name-err"
               />
-              <p id="name-hint" class="text-xs text-gray-500 mt-1">2–60 chars</p>
+              <p id="name-hint" class="text-xs text-gray-500 mt-1">2–60 characters</p>
               {#if errors.name}<p id="name-err" class="text-xs text-red-600 mt-1">{errors.name}</p>{/if}
             </div>
             <div>
