@@ -29,6 +29,8 @@
   // NEW: pre-calendly session info state
   let sessionInfoOpen = false;
   let sessionPrefill: any = {};
+  // NEW: enforce single subject selection for booking
+  let selectedBookingSubject: string = '';
   
   // Subject categories
   const subjectCategories = [
@@ -200,8 +202,8 @@
   // Function to open the subject selection modal before booking
   function openSubjectSelectionModal(tutor: Tutor) {
     selectedTutor = tutor;
-    // Initialize selected subjects to be empty
-    selectedSubjects = [];
+    // Initialize single selected subject for booking
+    selectedBookingSubject = '';
     subjectSelectionModalOpen = true;
   }
   
@@ -1286,36 +1288,32 @@
   <Modal bind:open={subjectSelectionModalOpen}>
     <svelte:fragment slot="header">
       <div class="w-full">
-        <h2 class="text-xl font-bold text-[#151f54]">Select Subjects with {selectedTutor.name}</h2>
+        <h2 class="text-xl font-bold text-[#151f54]">Select a Subject with {selectedTutor.name}</h2>
       </div>
     </svelte:fragment>
     
     <svelte:fragment slot="content">
       <div class="py-4">
         <p class="text-gray-700 mb-6">
-          Select the subjects you'd like to work on with {selectedTutor.name}:
+          Select one subject you'd like to work on with {selectedTutor.name}:
         </p>
         
         {#if selectedTutor.subjects && selectedTutor.subjects.length > 0}
-          <!-- Selected subjects display -->
-          {#if selectedSubjects.length > 0}
+          <!-- Selected subject display -->
+          {#if selectedBookingSubject}
             <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subjects ({selectedSubjects.length})</h3>
-              <div class="flex flex-wrap gap-2">
-                {#each selectedSubjects as subject}
-                  <div class="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                    {subject}
-                    <button 
-                      class="ml-1 text-blue-500 hover:text-blue-700"
-                      on:click={() => toggleSubject(subject)}
-                      aria-label="Remove {subject}"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                {/each}
+              <h3 class="text-sm font-semibold text-blue-800 mb-2">Selected Subject</h3>
+              <div class="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium w-fit">
+                {selectedBookingSubject}
+                <button 
+                  class="ml-2 text-blue-500 hover:text-blue-700"
+                  on:click={() => selectedBookingSubject = ''}
+                  aria-label="Remove {selectedBookingSubject}"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </div>
           {/if}
@@ -1326,28 +1324,21 @@
             {#if selectedTutor.subjects.some(s => s.includes('AP '))}
               <h3 class="text-lg font-semibold text-[#151f54] mt-2 mb-3">AP Subjects</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                {#each subjectCategories
-                  .filter(cat => cat.subjects.some(s => s.includes('AP ')))
-                  .flatMap(cat => cat.subjects)
-                  .filter(s => s.includes('AP ')) as subject}
-                  
-                  <!-- Only show card if the tutor teaches this subject -->
-                  {#if selectedTutor.subjects.includes(subject)}
-                    <button 
-                      type="button"
-                      class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                      class:selected-card={selectedSubjects.includes(subject)}
-                      class:ap-selected={selectedSubjects.includes(subject)}
-                      on:click={() => toggleSubject(subject)}
-                      aria-pressed={selectedSubjects.includes(subject)}
-                    >
-                      <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
-                      <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject.replace('AP ', '')}</h3>
-                      <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
-                        AP Course
-                      </span>
-                    </button>
-                  {/if}
+                {#each selectedTutor.subjects.filter(s => s.includes('AP ')) as subject}
+                  <button 
+                    type="button"
+                    class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
+                    class:bg-blue-50={selectedBookingSubject === subject}
+                    class:border-blue-300={selectedBookingSubject === subject}
+                    on:click={() => selectedBookingSubject = (selectedBookingSubject === subject ? '' : subject)}
+                    aria-pressed={selectedBookingSubject === subject}
+                  >
+                    <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
+                    <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject.replace('AP ', '')}</h3>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full inline-block w-fit">
+                      AP Course
+                    </span>
+                  </button>
                 {/each}
               </div>
             {/if}
@@ -1360,10 +1351,10 @@
                   <button 
                     type="button"
                     class="relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer p-4 flex flex-col text-left w-full"
-                    class:selected-card={selectedSubjects.includes(subject)}
-                    class:reg-selected={selectedSubjects.includes(subject)}
-                    on:click={() => toggleSubject(subject)}
-                    aria-pressed={selectedSubjects.includes(subject)}
+                    class:bg-blue-50={selectedBookingSubject === subject}
+                    class:border-blue-300={selectedBookingSubject === subject}
+                    on:click={() => selectedBookingSubject = (selectedBookingSubject === subject ? '' : subject)}
+                    aria-pressed={selectedBookingSubject === subject}
                   >
                     <div class="text-3xl mb-2">{getSubjectEmoji(subject)}</div>
                     <h3 class="text-base font-semibold text-[#151f54] mb-1">{subject}</h3>
@@ -1400,10 +1391,10 @@
             // NEW: open session info modal prior to Calendly
             sessionInfoOpen = true;
           }}
-          disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && selectedSubjects.length === 0}
+          disabled={selectedTutor.subjects && selectedTutor.subjects.length > 0 && !selectedBookingSubject}
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
           </svg>
           Continue
         </button>
@@ -1423,7 +1414,16 @@
     
     <svelte:fragment slot="content">
       <div class="py-4">
-        {#if selectedSubjects.length > 0}
+        {#if selectedBookingSubject}
+          <div class="mb-6">
+            <h3 class="font-medium text-gray-700 mb-2">Selected Subject:</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
+                {selectedBookingSubject}
+              </span>
+            </div>
+          </div>
+        {:else if selectedSubjects.length > 0}
           <div class="mb-6">
             <h3 class="font-medium text-gray-700 mb-2">Selected Subjects:</h3>
             <div class="flex flex-wrap gap-2">
@@ -1474,7 +1474,7 @@
 {#if sessionInfoOpen && selectedTutor}
   <SessionInfoModal
     bind:open={sessionInfoOpen}
-    subject={selectedSubjects[0]}
+    subject={selectedBookingSubject}
     on:submit={(e) => {
       sessionPrefill = buildCalendlyPrefill(e.detail.answers);
       bookingModalOpen = true;
