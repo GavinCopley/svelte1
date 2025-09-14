@@ -254,9 +254,6 @@
         <!-- Search Results -->
         {#if showResults && searchResults.length > 0}
           <div class="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto" transition:fade={{ duration: 200 }}>
-            <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 border-b border-gray-200">
-              Select a subject to find tutors
-            </div>
             <ul class="py-2 divide-y divide-gray-100">
               {#each searchResults as result, i}
                 <li 
