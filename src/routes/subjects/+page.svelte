@@ -247,7 +247,8 @@
 
   function close() {
     modalOpen = false;
-    // Keep active subject selected
+    // Clear active subject selection when closing the modal
+    active = null;
     document.body.style.overflow = '';
     // return focus to last trigger for a11y
     lastTrigger?.focus();
@@ -297,8 +298,9 @@
       fullSubjectName = subjectName.replace(/^AP\s+/, '');
     }
 
-    // Close the modal but keep the selected subject highlighted
+    // Close the modal and clear the selection
     modalOpen = false;
+    active = null;
     document.body.style.overflow = '';
 
     // Redirect to find tutors
@@ -365,19 +367,7 @@
     </div>
   {/if}
   
-  <!-- Clear selection button when a subject is selected -->
-  {#if active && !modalOpen}
-    <div class="flex justify-center mb-6">
-      <button
-        class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2"
-        on:click={() => active = null}
-        aria-label="Clear selection"
-      >
-        <span class="text-xs">✕</span>
-        Clear selection: {active.name}
-      </button>
-    </div>
-  {/if}
+  <!-- The "Clear selection" button has been removed -->
 
   <!-- AP Subjects Section -->
   <div class="mb-8">
@@ -390,14 +380,13 @@
           class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 {active?.key === s.key ? 'selected-card ap-selected' : ''} flex flex-col"
+                 flex flex-col"
           style="
             animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
             animation-delay: {70*i}ms;
             background-image:
               radial-gradient(1200px 300px at 0% 0%, rgba(59, 130, 246, .15), transparent 40%),
               linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
-            {active?.key === s.key ? 'transform: translateY(-2px); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);' : ''}
           "
         >
           <!-- AP gradient border frame -->
@@ -414,9 +403,7 @@
           <button
             class="w-full text-left focus:outline-none flex flex-col"
             on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
-            aria-label={active?.key === s.key ? `${s.name} selected` : `Choose ${s.name}`}
-            aria-pressed={active?.key === s.key}
-            class:selected={active?.key === s.key}
+            aria-label={`Choose ${s.name}`}
           >
             <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
 
@@ -453,14 +440,13 @@
           class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 {active?.key === s.key ? 'selected-card reg-selected' : ''} flex flex-col"
+                 flex flex-col"
           style="
             animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
             animation-delay: {70*(i+4)}ms;
             background-image:
               radial-gradient(1200px 300px at 0% 0%, rgba(16, 185, 129, .12), transparent 40%),
               linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
-            {active?.key === s.key ? 'transform: translateY(-2px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);' : ''}
           "
         >
           <!-- Regular gradient border frame -->
@@ -477,9 +463,7 @@
           <button
             class="w-full text-left focus:outline-none flex flex-col"
             on:click={(e) => openFor(s, e.currentTarget as HTMLElement)}
-            aria-label={active?.key === s.key ? `${s.name} selected` : `Choose ${s.name}`}
-            aria-pressed={active?.key === s.key}
-            class:selected={active?.key === s.key}
+            aria-label={`Choose ${s.name}`}
           >
             <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
 
@@ -844,53 +828,7 @@
   }
   .why:hover{ transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,.14); }
   
-  /* Selected subject card styles */
-  .selected-card {
-    border-color: #3b82f6 !important;
-    border-width: 2px !important;
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5) !important;
-  }
-  .ap-selected {
-    background-color: rgba(239, 246, 255, 0.9) !important;
-  }
-  .reg-selected {
-    background-color: rgba(236, 253, 245, 0.9) !important;
-  }
-  .selected-card h3 {
-    color: #1e40af !important;
-  }
-  .selected-card p {
-    color: #1e3a8a !important;
-    font-weight: 500;
-  }
-  /* Make sure all text in selected cards is visible */
-  .selected-card * {
-    color: inherit !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-  
-  /* Enhance icon in selected cards */
-  .selected-card .text-3xl {
-    color: #3b82f6 !important;
-    transform: scale(1.1);
-  }
-  
-  /* Enhance tag in selected AP cards */
-  .ap-selected .rounded-full {
-    background-color: #dbeafe !important;
-    border-color: #3b82f6 !important;
-    color: #1e40af !important;
-  }
-  
-  /* Enhance tag in selected Regular cards */
-  .reg-selected .rounded-full {
-    background-color: #d1fae5 !important;
-    border-color: #10b981 !important;
-    color: #065f46 !important;
-  }
+  /* Subject card styles - selection styles removed */
 
   /* Card layout structure for consistent button alignment */
   .group.relative {
