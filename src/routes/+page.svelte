@@ -1,11 +1,137 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
   import { fade } from 'svelte/transition';
+  import Fuse from 'fuse.js';
 
   let visible = false;
   let showInitialContent = true;
   let showNewContent = false;
+  let searchQuery = '';
+  let searchResults: {subject: string, category: string}[] = [];
+  let showResults = false;
+  
+  // Subject categories - copied from tutors page to have access to all subjects
+  const subjectCategories = [
+    {
+      name: "AP Capstone Diploma Program",
+      subjects: ["AP Research", "AP Seminar"]
+    },
+    {
+      name: "AP Arts",
+      subjects: ["AP 2-D Art and Design", "AP 3-D Art and Design", "AP Drawing", "AP Art History", "AP Music Theory"]
+    },
+    {
+      name: "AP English",
+      subjects: ["AP English Language and Composition", "AP English Literature and Composition"]
+    },
+    {
+      name: "AP History and Social Sciences",
+      subjects: [
+        "AP African American Studies", "AP Comparative Government and Politics", "AP European History", 
+        "AP Human Geography", "AP Macroeconomics", "AP Microeconomics", "AP Psychology", 
+        "AP United States Government and Politics", "AP United States History", "AP World History: Modern"
+      ]
+    },
+    {
+      name: "AP Math and Computer Science",
+      subjects: [
+        "AP Calculus AB", "AP Calculus BC", "AP Computer Science A", 
+        "AP Computer Science Principles", "AP Precalculus", "AP Statistics"
+      ]
+    },
+    {
+      name: "AP Sciences",
+      subjects: [
+        "AP Biology", "AP Chemistry", "AP Environmental Science", "AP Physics 1: Algebra-Based",
+        "AP Physics 2: Algebra-Based", "AP Physics C: Electricity and Magnetism", "AP Physics C: Mechanics"
+      ]
+    },
+    {
+      name: "AP World Languages and Cultures",
+      subjects: [
+        "AP Chinese Language and Culture", "AP French Language and Culture", "AP German Language and Culture",
+        "AP Italian Language and Culture", "AP Japanese Language and Culture", "AP Latin",
+        "AP Spanish Language and Culture", "AP Spanish Literature and Culture"
+      ]
+    },
+    {
+      name: "High School Core Subjects",
+      subjects: [
+        "Algebra I", "Algebra II", "Geometry", "Precalculus", "Trigonometry", 
+        "English 9", "English 10", "English 11", "English 12", 
+        "Biology", "Chemistry", "Physics", "Earth Science",
+        "World History", "U.S. History", "Government/Civics", "Economics"
+      ]
+    },
+    {
+      name: "High School Electives",
+      subjects: [
+        "Creative Writing", "Journalism", "Speech and Debate", "Film Studies",
+        "Computer Science", "Web Design", "Robotics", 
+        "Psychology", "Sociology", "Personal Finance"
+      ]
+    },
+    {
+      name: "Middle School Core Subjects",
+      subjects: [
+        "6th Grade Math", "7th Grade Math", "8th Grade Math", "Pre-Algebra",
+        "6th Grade English", "7th Grade English", "8th Grade English",
+        "6th Grade Science", "7th Grade Science", "8th Grade Science",
+        "6th Grade Social Studies", "7th Grade Social Studies", "8th Grade Social Studies"
+      ]
+    },
+    {
+      name: "Middle School Electives",
+      subjects: [
+        "Beginning Band", "Choir", "Art", "Drama",
+        "Computer Applications", "Health", "Physical Education",
+        "Study Skills", "Foreign Language Introduction"
+      ]
+    },
+    {
+      name: "Elementary Subjects",
+      subjects: [
+        "Elementary Reading", "Elementary Writing", "Elementary Math",
+        "Elementary Science", "Elementary Social Studies"
+      ]
+    }
+  ];
+  
+  // Extract all subjects and create a searchable array with category information
+  const allSubjects = subjectCategories.flatMap(category => 
+    category.subjects.map(subject => ({
+      subject: subject,
+      category: category.name
+    }))
+  );
+  
+  // Initialize Fuse.js for fuzzy searching
+  const fuseOptions = {
+    keys: ['subject', 'category'],
+    threshold: 0.3, // Lower threshold means more strict matching
+    includeScore: true
+  };
+  const fuse = new Fuse(allSubjects, fuseOptions);
+  
+  // Function to perform search
+  function performSearch() {
+    if (!searchQuery.trim()) {
+      searchResults = [];
+      showResults = false;
+      return;
+    }
+    
+    const results = fuse.search(searchQuery);
+    searchResults = results.map(result => result.item);
+    showResults = true;
+  }
+  
+  // Handle subject selection
+  function selectSubject(subject: string) {
+    // Navigate to subjects page with the selected subject as a parameter
+    window.location.href = `/subjects?subject=${encodeURIComponent(subject)}`;
+  }
 
   function handleGetStarted() {
     // First fade out the initial content
@@ -17,8 +143,21 @@
     }, 700); // Match the duration of the fade-out transition
   }
 
+  // Clear search when clicked outside
+  function handleClickOutside(event: MouseEvent) {
+    const searchContainer = document.getElementById('search-container');
+    if (searchContainer && !searchContainer.contains(event.target as Node)) {
+      showResults = false;
+    }
+  }
+
   onMount(() => {
     visible = true;
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   });
 </script>
 
@@ -70,6 +209,55 @@
         <img src="/favicon.png" alt="WiseOwl Tutoring Logo" width="120" height="120" class="mx-auto" />
       </div>
 
+      <!-- Search Bar -->
+      <div class="w-full max-w-xl mx-auto mb-4 relative" id="search-container">
+        <div class="relative">
+          <input
+            type="text"
+            bind:value={searchQuery}
+            on:input={performSearch}
+            on:focus={() => searchQuery && (showResults = true)}
+            placeholder="Search for subjects (e.g. Algebra, AP Biology, English...)"
+            class="w-full px-4 py-3 pl-12 rounded-full shadow-md border-2 border-[#151f54]/20 focus:border-[#151f54] focus:ring-2 focus:ring-[#151f54]/30 focus:outline-none transition-all"
+          />
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#151f54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {#if searchQuery}
+            <button 
+              on:click={() => { searchQuery = ''; searchResults = []; showResults = false; }}
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          {/if}
+        </div>
+        
+        <!-- Search Results -->
+        {#if showResults && searchResults.length > 0}
+          <div class="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto" transition:fade={{ duration: 200 }}>
+            <ul class="py-2 divide-y divide-gray-100">
+              {#each searchResults as result, i}
+                <li 
+                  class="px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors flex flex-col items-start text-left"
+                  on:click={() => selectSubject(result.subject)}
+                >
+                  <span class="font-medium text-[#151f54]">{result.subject}</span>
+                  <span class="text-xs text-gray-500">{result.category}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {:else if showResults && searchQuery.trim() !== ''}
+          <div class="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 text-center" transition:fade={{ duration: 200 }}>
+            <p class="text-gray-500">No subjects found matching "{searchQuery}"</p>
+          </div>
+        {/if}
+      </div>
+
       <!-- New Content Header -->
       <h2 class="text-4xl font-bold tracking-tight sm:text-5xl text-slate-900">
         Why Choose WiseOwl Tutoring?
@@ -99,9 +287,10 @@
       </div>
       
       <!-- Centered button linking to subjects page -->
-      <div class="flex justify-center mt-8">
+      <div class="flex flex-col items-center mt-8">
+        <p class="text-gray-600 mb-3">Search for a subject above or browse all our offerings</p>
         <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" href="/subjects?tutorial=true">
-          Explore Our Subjects
+          Explore All Subjects
         </Button>
       </div>
     </div>
@@ -123,5 +312,38 @@
 
   .animate-fade-in-up {
     animation: fade-in-up 0.6s ease-out forwards;
+  }
+  
+  /* Search bar styling */
+  input[type="text"]:focus {
+    box-shadow: 0 0 0 2px rgba(21, 31, 84, 0.2);
+  }
+  
+  /* Search results styling */
+  .search-results {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .search-results li:hover {
+    background-color: rgba(21, 31, 84, 0.05);
+  }
+  
+  /* Custom scrollbar for search results */
+  .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .overflow-y-auto::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+    border-radius: 8px;
+  }
+  
+  .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 8px;
+  }
+  
+  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background-color: #a8a8a8;
   }
 </style>
