@@ -8,15 +8,15 @@
   <!-- Header -->
   <header class="bg-[#151f54] text-white shadow-[0_2px_20px_0px_rgba(0,0,0,0.4)] border-b-4 border-[#212d6e]">
       <div class="container mx-auto px-6 py-4">
-          <div class="flex items-center justify-between">
-              <!-- Logo and Brand -->
-              <div class="flex items-center space-x-3">
+          <div class="flex flex-wrap items-center">
+              <!-- Logo and Brand - Positioned to the left -->
+              <div class="flex items-center space-x-3 w-1/4">
                   <img src="/favicon.png" alt="Logo" class="w-10 h-10" />
                   <h1 class="text-3xl font-bold">WiseOwl</h1>
               </div>
 
-              <!-- Navigation -->
-              <nav class="hidden md:flex items-center space-x-8">
+              <!-- Navigation - Centered in the middle -->
+              <nav class="hidden md:flex items-center justify-center space-x-8 w-2/4">
                   <a href="/" class="font-semibold hover:bg-gray-700 rounded px-3 py-2 text-lg flex items-center space-x-2 text-white transition-colors">
                       <Icon name="home" />
                       <span>Home</span>
@@ -35,12 +35,14 @@
                   </a>
               </nav>
 
-              <!-- Mobile Menu Button (for future mobile implementation) -->
-              <button class="md:hidden text-white" aria-label="Open mobile menu">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                  </svg>
-              </button>
+              <!-- Mobile Menu Button (for future mobile implementation) - Positioned to the right -->
+              <div class="flex justify-end w-1/4">
+                  <button class="md:hidden text-white" aria-label="Open mobile menu">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                      </svg>
+                  </button>
+              </div>
           </div>
       </div>
   </header>
