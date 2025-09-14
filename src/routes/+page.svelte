@@ -277,35 +277,19 @@
 
       <!-- New Content Header -->
       <h2 class="text-4xl font-bold tracking-tight sm:text-5xl text-slate-900">
-        Why Choose WiseOwl Tutoring?
+        Find Your Subject
       </h2>
 
-      <!-- Benefits in a grid layout -->
-      <div class="grid grid-cols-1 gap-8 pt-6 md:grid-cols-2">
-        <div class="flex flex-col items-center text-center p-4">
-          <div class="mb-4 rounded-full bg-purple-100 p-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Expert Tutors</h3>
-          <p class="text-slate-700">Highly qualified educators with proven track records in their respective subjects.</p>
-        </div>
-
-        <div class="flex flex-col items-center text-center p-4">
-          <div class="mb-4 rounded-full bg-purple-100 p-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Proven Results</h3>
-          <p class="text-slate-700">Our students consistently show significant improvement in grades and confidence.</p>
-        </div>
+      <!-- Quick Subject Search Section -->
+      <div class="w-full max-w-2xl mx-auto mt-6">
+        <p class="text-lg text-slate-700 mb-8">
+          Quickly search for the subject you need help with. Our expert tutors are ready to assist with a wide range of subjects.
+        </p>
       </div>
       
       <!-- Centered button linking to subjects page -->
-      <div class="flex flex-col items-center mt-8">
-        <p class="text-gray-600 mb-3">Search for a subject above or browse all our offerings</p>
+      <div class="flex flex-col items-center mt-4">
+        <p class="text-gray-600 mb-3">Can't find what you're looking for? Browse all our subjects</p>
         <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" href="/subjects?tutorial=true">
           Explore All Subjects
         </Button>
