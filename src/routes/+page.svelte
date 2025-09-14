@@ -265,9 +265,6 @@
                 >
                   <div class="flex items-center">
                     <span class="font-medium text-[#151f54]">{result.subject}</span>
-                    {#if searchQuery && result.subject.toLowerCase() !== searchQuery.toLowerCase() && result.subject.toLowerCase().includes(searchQuery.toLowerCase())}
-                      <span class="ml-2 text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">Exact match</span>
-                    {/if}
                   </div>
                   <span class="text-xs text-gray-500">{result.category}</span>
                 </li>
