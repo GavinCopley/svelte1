@@ -533,98 +533,89 @@
           <p class="text-red-600 mb-4">{error}</p>
         </div>
       {:else if filteredTutors.length > 0}
-        <div class="grid grid-cols-1 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {#each filteredTutors as tutor (tutor.id)}
             <div 
-              class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-gray-100"
+              class="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 border border-gray-100 focus-within:ring-2 ring-[#151f54]"
               on:click={() => openTutorProfile(tutor)}
               role="button"
               tabindex="0"
               on:keydown={(e) => e.key === 'Enter' && openTutorProfile(tutor)}
             >
-              <div class="flex flex-col md:flex-row">
-                <!-- Larger Tutor Image -->
-                <div class="md:w-1/4 lg:w-1/5 aspect-square">
-                  <img 
-                    src={tutor.image} 
-                    alt={tutor.name} 
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-                
-                <!-- Tutor Information -->
-                <div class="p-6 md:w-3/4 lg:w-4/5">
-                  <div class="flex flex-col h-full">
-                    <!-- Header with Name -->
-                    <div class="mb-3">
-                      <div class="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 class="text-2xl font-bold text-[#151f54]">{tutor.name}</h3>
-                        {#each selectedSubjects.filter(s => tutor.subjects.includes(s)) as subject, i}
-                          <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-                            <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
-                            <span>{subject}</span>
-                          </span>
-                        {/each}
-                      </div>
-                      <p class="text-gray-600">{tutor.education}</p>
-                    </div>
-                    
-                    <!-- Experience Section -->
-                    <div class="mb-4 flex-grow">
-                      <div class="mb-3">
-                        <div class="font-medium text-gray-800">Experience</div>
-                        <p class="text-sm text-gray-700">{tutor.experience || 'Not specified'}</p>
-                      </div>
-                      
-                      <!-- Subjects Section -->
-                      <div>
-                        <div class="font-medium text-gray-800 mb-1 flex items-center gap-2">
-                          <span>Subjects</span>
-                          {#if tutor.subjects.length > 0}
-                            <span class="text-gray-500 text-xs font-normal">
-                              ({tutor.subjects.length} total)
-                            </span>
-                          {/if}
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-1.5 mb-2">
-                          {#each tutor.subjects
-                            .filter(s => !selectedSubjects.includes(s))
-                            .slice(0, 5 - selectedSubjects.filter(s => tutor.subjects.includes(s)).length) as subject}
-                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
-                              {subject}
-                            </span>
-                          {/each}
-                          
-                          {#if tutor.subjects.length > 5 || (tutor.subjects.length > selectedSubjects.filter(s => tutor.subjects.includes(s)).length + 5)}
-                            <button 
-                              class="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center underline"
-                              on:click={(event) => { event.stopPropagation(); openSubjectsDetail(tutor, event); }}
-                              on:keydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); openSubjectsDetail(tutor, e); }}}
-                            >
-                              See all {tutor.subjects.length} subjects
-                            </button>
-                          {/if}
-                        </div>
-                      </div>
-                      
-                      <!-- Bio Preview -->
-                      <div class="mt-3">
-                        <div class="font-medium text-gray-800 mb-1">About</div>
-                        <p class="text-sm text-gray-700 line-clamp-2">{tutor.bio || 'No bio available'}</p>
-                      </div>
-                    </div>
-                    
-                    <!-- Footer with Action Button -->
-                    <div class="flex justify-end mt-2">
-                      <button
-                        class="bg-[#151f54] text-white px-5 py-2 rounded-md hover:bg-[#212d6e] transition-colors flex items-center font-medium"
-                        on:click={(event) => {event.stopPropagation(); openTutorProfile(tutor);}}
-                      >
-                        View Full Profile
-                      </button>
-                    </div>
+              <!-- Square banner image -->
+              <div class="relative">
+                <img 
+                  src={tutor.image} 
+                  alt={tutor.name} 
+                  class="w-full aspect-square object-cover"
+                  loading="lazy" decoding="async"
+                />
+              </div>
+
+              <!-- Content -->
+              <div class="p-4">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h3 class="text-lg font-bold text-[#151f54]">{tutor.name}</h3>
+                    <p class="text-gray-600 text-sm">{tutor.education}</p>
                   </div>
+                  <button
+                    class="hidden sm:inline-flex bg-[#151f54] text-white px-3 py-1.5 rounded-md hover:bg-[#212d6e] transition-colors font-medium text-sm"
+                    on:click={(event) => {event.stopPropagation(); openTutorProfile(tutor);}}
+                  >
+                    View
+                  </button>
+                </div>
+
+                <!-- Subjects chips (max 5) -->
+                <div class="mb-2">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-medium text-gray-800 text-sm">Subjects</span>
+                  </div>
+                  {#if tutor.subjects && tutor.subjects.length > 0}
+                    <div class="flex flex-wrap gap-1.5">
+                      <!-- Selected subject chips first (up to 5) -->
+                      {#each selectedSubjects.filter(s => tutor.subjects.includes(s)).slice(0,5) as subject}
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1.5">
+                          <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
+                          <span>{subject}</span>
+                        </span>
+                      {/each}
+                      <!-- Then remaining up to fill 5 total -->
+                      {#each tutor.subjects.filter(s => !selectedSubjects.includes(s)).slice(0, Math.max(0, 5 - selectedSubjects.filter(s => tutor.subjects.includes(s)).slice(0,5).length)) as subject}
+                        <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
+                          <span>{subject}</span>
+                        </span>
+                      {/each}
+                      {#if tutor.subjects.length > 5}
+                        <button 
+                          class="text-gray-600 hover:text-gray-800 text-xs font-medium underline"
+                          on:click={(event) => { event.stopPropagation(); openSubjectsDetail(tutor, event); }}
+                        >
+                          +{tutor.subjects.length - 5} more
+                        </button>
+                      {/if}
+                    </div>
+                  {:else}
+                    <span class="text-sm text-gray-500">No subjects specified</span>
+                  {/if}
+                </div>
+
+                <!-- About/experience -->
+                <div class="text-sm text-gray-700">
+                  <div class="mb-1"><span class="font-medium">Experience:</span> {tutor.experience || 'Not specified'}</div>
+                  <p class="line-clamp-2 mt-2">{tutor.bio || 'No bio available'}</p>
+                </div>
+
+                <!-- Mobile action -->
+                <div class="sm:hidden mt-3">
+                  <button
+                    class="w-full bg-[#151f54] text-white px-4 py-2 rounded-md hover:bg-[#212d6e] transition-colors font-medium text-sm"
+                    on:click={(event) => {event.stopPropagation(); openTutorProfile(tutor);}}
+                  >
+                    View Profile
+                  </button>
                 </div>
               </div>
             </div>

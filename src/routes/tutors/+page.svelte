@@ -885,43 +885,55 @@
           on:click={refreshTutorsData}>Try Again</button>
       </div>
     {:else if tutors.length > 0}
-      <div class="grid md:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         {#each tutors as tutor (tutor.id)}
-          <div class="bg-white rounded-lg overflow-hidden shadow-md flex">
-            <div class="w-1/3">
-              <img src={tutor.image} alt={tutor.name} class="w-full h-full object-cover" />
+          <div class="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 border border-gray-100 focus-within:ring-2 ring-[#151f54]">
+            <!-- Square top image -->
+            <div class="relative">
+              <img src={tutor.image} alt={tutor.name} class="w-full aspect-square object-cover" loading="lazy" decoding="async" />
             </div>
-            <div class="w-2/3 p-6 relative flex flex-col">
-              <div class="flex-grow">
-                <h3 class="text-2xl font-bold mb-2">{tutor.name}</h3>
-                <p class="text-gray-600 mb-2">{tutor.education}</p>
-                <div class="mb-2">
-                  <div class="flex items-center gap-1">
-                    <strong>Subjects:</strong>
-                    {#if tutor.subjects && tutor.subjects.length > 10}
+
+            <!-- Card content -->
+            <div class="p-4 flex flex-col gap-3">
+              <div>
+                <h3 class="text-xl font-bold text-[#151f54]">{tutor.name}</h3>
+                <p class="text-gray-600">{tutor.education}</p>
+              </div>
+
+              <!-- Subjects as chips -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-medium text-gray-800">Subjects</span>
+                </div>
+                {#if tutor.subjects && tutor.subjects.length > 0}
+                  <div class="flex flex-wrap gap-1.5">
+                    {#each tutor.subjects.slice(0, 5) as subject}
+                      <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <span aria-hidden="true">{getSubjectEmoji(subject)}</span>
+                        <span>{subject}</span>
+                      </span>
+                    {/each}
+                    {#if tutor.subjects.length > 5}
                       <button
-                        class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors"
+                        class="text-gray-600 hover:text-gray-800 text-xs font-medium underline"
                         on:click|stopPropagation={() => openSubjectsDetailModal(tutor)}
                       >
-                        Show all ({tutor.subjects.length})
+                        +{tutor.subjects.length - 5} more
                       </button>
                     {/if}
                   </div>
-                  {#if tutor.subjects && tutor.subjects.length > 0}
-                    <div class="text-sm">
-                      {tutor.subjects.slice(0, 10).join(", ")}
-                      {#if tutor.subjects.length > 10}
-                        <span class="text-gray-500">... and {tutor.subjects.length - 10} more</span>
-                      {/if}
-                    </div>
-                  {:else}
-                    <span>Not specified</span>
-                  {/if}
-                </div>
-                <p class="mb-2"><strong>Experience:</strong> {tutor.experience}</p>
-                <p class="line-clamp-2 text-sm mb-3">{tutor.bio}</p>
+                {:else}
+                  <span class="text-sm text-gray-500">Not specified</span>
+                {/if}
               </div>
-              <div class="flex justify-end">
+
+              <!-- Experience & Bio -->
+              <div>
+                <div class="text-sm text-gray-700"><span class="font-medium">Experience:</span> {tutor.experience}</div>
+                <p class="line-clamp-2 text-sm mt-2 text-gray-700">{tutor.bio}</p>
+              </div>
+
+              <div class="pt-2 flex justify-end">
                 <button
                   class="bg-[#151f54] text-white px-5 py-2 rounded-md hover:bg-[#212d6e] transition-colors flex items-center font-medium"
                   on:click={() => openTutorProfile(tutor)}
@@ -1475,11 +1487,7 @@
   <SessionInfoModal
     bind:open={sessionInfoOpen}
     subject={selectedBookingSubject}
-    on:submit={(e) => {
-
-      sessionPrefill = buildCalendlyPrefill(e.detail.answers);
-      bookingModalOpen = true;
-    }}
+    on:submit={(e) => { sessionPrefill = buildCalendlyPrefill(e.detail.answers); bookingModalOpen = true; }}
     on:cancel={() => { sessionInfoOpen = false; }}
   />
 {/if}
@@ -1555,5 +1563,14 @@
     background-color: #bbf7d0;
     color: #166534;
     font-weight: 600;
+  }
+
+  /* Local line clamp */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 </style>
