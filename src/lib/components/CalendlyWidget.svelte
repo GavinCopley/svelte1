@@ -10,8 +10,12 @@
   let lastSignature = '';
   let signature = '';
   let attempts = 0;
-  const maxAttempts = 5;
+  const maxAttempts = 3; // reduce retries to limit duplicate inits
   let verifyTimer: number | null = null;
+  let observer: MutationObserver | null = null;
+  let initVersion = 0; // monotonically increasing id for each init()
+  let initInProgress = false;
+  let pendingReinit = false;
 
   function ensureStyle() {
     const href = 'https://assets.calendly.com/assets/external/widget.css';
@@ -81,6 +85,30 @@
     return !!obj && typeof obj === 'object' && Object.keys(obj).length > 0;
   }
 
+  function disconnectObserver() {
+    try { observer?.disconnect(); } catch {}
+    observer = null;
+  }
+
+  function pruneDuplicateIframes() {
+    if (!container) return;
+    const iframes = Array.from(container.querySelectorAll('iframe'));
+    if (iframes.length <= 1) return;
+    // Keep the last appended iframe; remove the rest
+    for (let i = 0; i < iframes.length - 1; i++) {
+      iframes[i].remove();
+    }
+  }
+
+  function observeIframes() {
+    if (!container) return;
+    disconnectObserver();
+    observer = new MutationObserver(() => {
+      pruneDuplicateIframes();
+    });
+    observer.observe(container, { childList: true, subtree: false });
+  }
+
   async function init(force = false) {
     if (!container || !url) return;
 
@@ -93,15 +121,22 @@
     if (!Calendly) return;
 
     const current = JSON.stringify({ url: normalized, prefill, utm });
-    if (!force && current === lastSignature && container.children.length > 0) {
-      return; // nothing to do
+    if (!force && current === lastSignature && (container.children.length > 0 || initInProgress)) {
+      return; // nothing to do or already in progress
     }
     lastSignature = current;
+
+    // version stamp for this init cycle
+    const myVersion = ++initVersion;
+    initInProgress = true;
 
     // Clear previous embed before re-initializing
     try {
       container.innerHTML = '';
     } catch {}
+
+    // Start observing to auto-prune duplicate iframes (caused by racing inits)
+    observeIframes();
 
     // Wait until the container is actually visible (important when inside modals/tabs)
     const visible = await waitForVisible(container, 8000);
@@ -122,10 +157,19 @@
       console.error('CalendlyWidget: initInlineWidget threw', e);
     }
 
-    scheduleVerify();
+    scheduleVerify(myVersion);
+
+    // mark finished after a short delay to avoid immediate re-entry while Calendly attaches
+    setTimeout(() => {
+      initInProgress = false;
+      if (pendingReinit) {
+        pendingReinit = false;
+        init(true);
+      }
+    }, 250);
   }
 
-  function scheduleVerify() {
+  function scheduleVerify(version: number) {
     // Verify an iframe was injected; if not, retry a few times.
     clearVerify();
     verifyTimer = window.setTimeout(() => {
@@ -134,8 +178,11 @@
         attempts += 1;
         console.warn(`CalendlyWidget: iframe not detected, retrying init (${attempts}/${maxAttempts})`);
         init(true);
+      } else {
+        // Final prune once things settle
+        pruneDuplicateIframes();
       }
-    }, 700);
+    }, 900);
   }
 
   function clearVerify() {
@@ -151,15 +198,25 @@
 
   onDestroy(() => {
     clearVerify();
+    disconnectObserver();
+    // Best-effort cleanup to avoid lingering iframes if parent stays mounted briefly
+    try { container && (container.innerHTML = ''); } catch {}
   });
 
   // Update signature whenever inputs change
   $: signature = JSON.stringify({ url, prefill, utm });
 
   // Re-initialize when inputs change (url/prefill/utm) and container is ready
-  $: if (container && url && signature) {
-    // signature referenced to trigger on prefill/utm changes as well
-    init();
+  $: if (container && url) {
+    const normalized = normalizeUrl(url) || '';
+    const current = JSON.stringify({ url: normalized, prefill, utm });
+    if (current !== lastSignature) {
+      if (!initInProgress) {
+        init();
+      } else {
+        pendingReinit = true;
+      }
+    }
   }
 </script>
 
