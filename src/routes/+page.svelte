@@ -315,7 +315,7 @@
                       <span class="font-medium text-gray-500">{result.subject}</span>
                     </div>
                     <div class="mt-1 text-xs text-amber-600">
-                      Looking for {result.subject}? Subject not currently available.
+                      Subject not currently available.
                     </div>
                   </li>
                 {/if}
