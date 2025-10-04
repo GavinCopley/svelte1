@@ -1,6 +1,23 @@
 <script>
     import "../app.css";
     import Icon from '$lib/components/Icon.svelte';
+    import { onMount } from 'svelte';
+    import { browser } from '$app/environment';
+    import { tutorService } from '$lib/services/tutorService';
+    import { availableSubjectsStore } from '$lib/stores/availableSubjectsStore';
+
+    // Initialize available subjects when the app starts
+    onMount(async () => {
+        if (browser) {
+            try {
+                // Load available subjects
+                await tutorService.refreshAvailableSubjects();
+                console.log('Available subjects initialized');
+            } catch (error) {
+                console.error('Failed to initialize available subjects:', error);
+            }
+        }
+    });
 </script>
 
 <!-- Layout structure -->

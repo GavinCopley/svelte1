@@ -7,6 +7,7 @@
   import { tutorService } from '$lib/services/tutorService';
   import { tick } from 'svelte';
   import { getEmoji, categoryEmojis } from '$lib';
+  import { availableSubjectsStore, subjectCategories as availableSubjectCategories } from '$lib';
   // import { SessionInfoModal } from '$lib'; // Removed: no longer opening quiz from this page
   
   // Enhanced Subject interface that includes UI elements and tutor count
@@ -341,176 +342,46 @@
         // Initialize all categories as collapsed by default
         expandedCategories = {};
         
-        // Fetch subjects from Firestore
-        let subjects: Subject[] = [];
-        try {
-          subjects = await subjectService.getAllSubjects();
-          console.log(`Loaded ${subjects.length} subjects from Firestore`);
-        } catch (subjectError) {
-          console.error("Error fetching subjects:", subjectError);
-          subjects = []; // Set to empty array if fetch fails
-        }
-        
-        // Add our comprehensive list of subjects as supplemental data
-        // This ensures we have a complete catalog even if Firestore has limited subjects
-        const existingSubjectNames = subjects.map(s => s.name.toLowerCase());
-        
-        // Add supplemental subjects that don't already exist in Firestore
-        const supplementalSubjects = additionalSubjects
-          .filter(subject => !existingSubjectNames.includes(subject.name.toLowerCase()))
-          .map((subject, index) => ({
-            ...subject,
-            id: `supplemental-${index}` // Add IDs for supplemental subjects
-          }));
-          
-        console.log(`Added ${supplementalSubjects.length} supplemental subjects`);
-        subjects = [...subjects, ...supplementalSubjects];
-        
-        // Get all tutors (we'll use this to count tutors per subject)
-        let tutors: { id?: string; name: string; subjects: string[]; education: string; experience: string; bio: string; image: string; }[] = [];
-        try {
-          tutors = await tutorService.getAllTutors();
-          console.log(`Loaded ${tutors.length} tutors from Firestore`);
-        } catch (tutorError) {
-          console.error("Error fetching tutors:", tutorError);
-        }
-        
-        // Process subjects with tutor counts - with safer handling
-        const enhancedSubjects = await Promise.all(subjects.map(async (subject) => {
-          // Safety check - ensure subject has a name
-          if (!subject?.name) {
-            console.error("Subject without name detected:", subject);
-            return {
-              ...subject,
-              emoji: '❓',
-              tag: 'Unknown',
-              tutorCount: 0,
-              apTutorCount: 0,
-              nonApTutorCount: 0
+        // Use the available subjects from the store
+        // This ensures we only display subjects that have available tutors
+        if ($availableSubjectsStore.length > 0) {
+          // Convert available subjects to enhanced subjects
+          const enhancedSubjects = $availableSubjectsStore.map(subject => {
+            // Create an enhanced subject with the required fields
+            const enhancedSubject: EnhancedSubject = {
+              id: subject.name.toLowerCase().replace(/\s+/g, '-'),
+              name: subject.name,
+              description: '', // Will be populated from additionalSubjects if possible
+              category: subject.category || 'Other',
+              level: subject.isAP ? 'Advanced Placement' : 'Grade-Level',
+              emoji: getEmoji({ name: subject.name, category: subject.category || '' }),
+              tag: getTag({ name: subject.name, category: subject.category || '', level: subject.isAP ? 'Advanced Placement' : '' }),
+              tutorCount: subject.tutorCount,
+              apTutorCount: subject.isAP ? subject.tutorCount : 0,
+              nonApTutorCount: subject.isAP ? 0 : subject.tutorCount
             };
-          }
-
-          try {
-            // Count tutors for this subject using actual tutor data for ALL subjects
-            // For each subject, we need to count:
-            // 1. Total tutors teaching this subject (in either AP or non-AP form)
-            // 2. Tutors teaching specifically the AP version
-            // 3. Tutors teaching specifically the non-AP version
-
-            // Normalize subject name for comparison
-            const normalizedName = subject.name.toLowerCase();
-            const isAPSubject = normalizedName.startsWith('ap ');
-            const baseSubjectName = isAPSubject ? normalizedName.substring(3) : normalizedName;
             
-            // Find AP and non-AP versions of the subject
-            const apVersionName = `ap ${baseSubjectName}`;
-            const nonApVersionName = baseSubjectName;
-
-            // Define the matching function to handle edge cases
-            const matchesSubject = (tutorSubject = '', targetSubject = '') => {
-              if (!tutorSubject) return false;
-              
-              const ts = tutorSubject.toLowerCase().trim();
-              return ts === targetSubject || 
-                    // Handle cases where spaces might be different
-                    ts.replace(/\s+/g, '') === targetSubject.replace(/\s+/g, '') ||
-                    // Handle cases where there might be period after "AP"
-                    ts.replace('ap.', 'ap ') === targetSubject;
-            };
-
-            // Count tutors teaching this subject (AP or non-AP version) - with safer array handling
-            const matchingTutors = tutors.filter(tutor => 
-              tutor?.subjects && Array.isArray(tutor.subjects) && tutor.subjects.some((s: string) => {
-                if (typeof s !== 'string') return false;
-                const tutorSubject = s.toLowerCase();
-                return matchesSubject(tutorSubject, normalizedName) || 
-                      matchesSubject(tutorSubject, apVersionName) || 
-                      (isAPSubject && matchesSubject(tutorSubject, baseSubjectName));
-              })
+            // Try to find a matching description from additionalSubjects
+            const matchingSubject = additionalSubjects.find(s => 
+              s.name.toLowerCase() === subject.name.toLowerCase() || 
+              (subject.isAP && `AP ${s.name.toLowerCase()}` === subject.name.toLowerCase())
             );
             
-            const tutorCount = matchingTutors.length;
+            if (matchingSubject) {
+              enhancedSubject.description = matchingSubject.description;
+              if (!enhancedSubject.category) enhancedSubject.category = matchingSubject.category;
+              if (!enhancedSubject.level) enhancedSubject.level = matchingSubject.level;
+            } else {
+              // Generic description based on subject name
+              enhancedSubject.description = subject.isAP 
+                ? `College Board-aligned curriculum for ${subject.name} with exam preparation and advanced concepts.`
+                : `Comprehensive coverage of ${subject.name} curriculum with foundational concepts and grade-level content.`;
+            }
             
-            // Count AP tutors specifically
-            const apTutorCount = tutors.filter(tutor => 
-              tutor?.subjects && Array.isArray(tutor.subjects) && tutor.subjects.some((s: string) => {
-                if (typeof s !== 'string') return false;
-                const tutorSubject = s.toLowerCase();
-                return matchesSubject(tutorSubject, apVersionName) || 
-                      (isAPSubject && matchesSubject(tutorSubject, normalizedName));
-              })
-            ).length;
-            
-            // Count non-AP tutors specifically
-            const nonApTutorCount = tutors.filter(tutor => 
-              tutor?.subjects && Array.isArray(tutor.subjects) && tutor.subjects.some((s: string) => {
-                if (typeof s !== 'string') return false;
-                const tutorSubject = s.toLowerCase();
-                return matchesSubject(tutorSubject, nonApVersionName) && 
-                      !matchesSubject(tutorSubject, apVersionName);
-              })
-            ).length;
-            
-            return {
-              ...subject,
-              emoji: getEmoji(subject),
-              tag: getTag(subject),
-              tutorCount,
-              apTutorCount,
-              nonApTutorCount
-            };
-          } catch (err) {
-            console.error(`Error processing subject ${subject.name}:`, err);
-            return {
-              ...subject,
-              emoji: getEmoji(subject),
-              tag: getTag(subject),
-              tutorCount: 0,
-              apTutorCount: 0,
-              nonApTutorCount: 0
-            };
-          }
+            return enhancedSubject;
+          });
           
-          // No longer needed - this code has been moved into the try/catch block for each subject
-        }));
-        
-        allSubjects = enhancedSubjects;
-        
-        // Group subjects by category
-        categorizedSubjects = allSubjects.reduce((acc, subject) => {
-          if (!acc[subject.category]) {
-            acc[subject.category] = [];
-          }
-          acc[subject.category].push(subject);
-          return acc;
-        }, {} as Record<string, EnhancedSubject[]>);
-        
-        // Initialize filtered subjects with all subjects
-        filteredSubjects = [...allSubjects];
-        loading = false;
-      } catch (e) {
-        console.error("Error fetching or processing subjects:", e);
-        
-        // Extract more specific error message
-        if (e instanceof Error) {
-          console.error("Error details:", e.message);
-          error = `Failed to load subjects: ${e.message}. Please try again.`;
-        } else {
-          error = "Failed to load subjects. Please try again.";
-        }
-        
-        // Even with an error, we can still show supplemental subjects
-        if (allSubjects.length === 0) {
-          // Create fallback subjects from our additionalSubjects if we have nothing else
-          allSubjects = additionalSubjects.map((subject, index) => ({
-            ...subject,
-            id: `supplemental-fallback-${index}`,
-            emoji: getEmoji(subject),
-            tag: getTag(subject),
-            tutorCount: 0,
-            apTutorCount: 0,
-            nonApTutorCount: 0
-          }));
+          allSubjects = enhancedSubjects;
           
           // Group subjects by category
           categorizedSubjects = allSubjects.reduce((acc, subject) => {
@@ -521,14 +392,127 @@
             return acc;
           }, {} as Record<string, EnhancedSubject[]>);
           
-          // Initialize filtered subjects
+          // Initialize filtered subjects with all subjects
+          filteredSubjects = [...allSubjects];
+        } else {
+          // No available subjects in the store, try to load them first
+          await tutorService.refreshAvailableSubjects();
+          
+          // Now try again with the refreshed store
+          if ($availableSubjectsStore.length > 0) {
+            // Convert available subjects to enhanced subjects (same code as above)
+            const enhancedSubjects = $availableSubjectsStore.map(subject => {
+              const enhancedSubject: EnhancedSubject = {
+                id: subject.name.toLowerCase().replace(/\s+/g, '-'),
+                name: subject.name,
+                description: '',
+                category: subject.category || 'Other',
+                level: subject.isAP ? 'Advanced Placement' : 'Grade-Level',
+                emoji: getEmoji({ name: subject.name, category: subject.category || '' }),
+                tag: getTag({ name: subject.name, category: subject.category || '', level: subject.isAP ? 'Advanced Placement' : '' }),
+                tutorCount: subject.tutorCount,
+                apTutorCount: subject.isAP ? subject.tutorCount : 0,
+                nonApTutorCount: subject.isAP ? 0 : subject.tutorCount
+              };
+              
+              // Try to find a matching description
+              const matchingSubject = additionalSubjects.find(s => 
+                s.name.toLowerCase() === subject.name.toLowerCase() || 
+                (subject.isAP && `AP ${s.name.toLowerCase()}` === subject.name.toLowerCase())
+              );
+              
+              if (matchingSubject) {
+                enhancedSubject.description = matchingSubject.description;
+                if (!enhancedSubject.category) enhancedSubject.category = matchingSubject.category;
+                if (!enhancedSubject.level) enhancedSubject.level = matchingSubject.level;
+              } else {
+                enhancedSubject.description = subject.isAP 
+                  ? `College Board-aligned curriculum for ${subject.name} with exam preparation and advanced concepts.`
+                  : `Comprehensive coverage of ${subject.name} curriculum with foundational concepts and grade-level content.`;
+              }
+              
+              return enhancedSubject;
+            });
+            
+            allSubjects = enhancedSubjects;
+            
+            categorizedSubjects = allSubjects.reduce((acc, subject) => {
+              if (!acc[subject.category]) {
+                acc[subject.category] = [];
+              }
+              acc[subject.category].push(subject);
+              return acc;
+            }, {} as Record<string, EnhancedSubject[]>);
+            
+            filteredSubjects = [...allSubjects];
+          } else {
+            // Still no subjects, use fallback
+            console.log("No available subjects found, using fallback data");
+            error = "No subjects with available tutors found. Using fallback data.";
+            
+            // Create fallback subjects from additionalSubjects
+            const fallbackSubjects = additionalSubjects.slice(0, 20).map((subject, index) => ({
+              ...subject,
+              id: `supplemental-fallback-${index}`,
+              emoji: getEmoji(subject),
+              tag: getTag(subject),
+              tutorCount: 0,
+              apTutorCount: 0,
+              nonApTutorCount: 0
+            }));
+            
+            allSubjects = fallbackSubjects;
+            
+            categorizedSubjects = allSubjects.reduce((acc, subject) => {
+              if (!acc[subject.category]) {
+                acc[subject.category] = [];
+              }
+              acc[subject.category].push(subject);
+              return acc;
+            }, {} as Record<string, EnhancedSubject[]>);
+            
+            filteredSubjects = [...allSubjects];
+          }
+        }
+        
+        loading = false;
+      } catch (e) {
+        console.error("Error processing available subjects:", e);
+        
+        // Extract more specific error message
+        if (e instanceof Error) {
+          console.error("Error details:", e.message);
+          error = `Failed to load subjects: ${e.message}. Please try again.`;
+        } else {
+          error = "Failed to load subjects. Please try again.";
+        }
+        
+        // Use fallback data if needed
+        if (allSubjects.length === 0) {
+          // Create fallback subjects from additionalSubjects
+          allSubjects = additionalSubjects.slice(0, 20).map((subject, index) => ({
+            ...subject,
+            id: `supplemental-fallback-${index}`,
+            emoji: getEmoji(subject),
+            tag: getTag(subject),
+            tutorCount: 0,
+            apTutorCount: 0,
+            nonApTutorCount: 0
+          }));
+          
+          categorizedSubjects = allSubjects.reduce((acc, subject) => {
+            if (!acc[subject.category]) {
+              acc[subject.category] = [];
+            }
+            acc[subject.category].push(subject);
+            return acc;
+          }, {} as Record<string, EnhancedSubject[]>);
+          
           filteredSubjects = [...allSubjects];
           
           console.log("Using fallback subjects after error");
           error = "⚠️ Using fallback subject data. Tutor availability information is not accurate.";
         }
-        
-        loading = false;
       } finally {
         // Ensure loading state is reset even if there was an error
         loading = false;
@@ -593,10 +577,10 @@
 <!-- HERO -->
 <section class="relative z-[1] text-center mb-12">
   <h1 class="text-5xl font-extrabold text-[#151f54] mb-4 tracking-tight">
-    <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#151f54] to-[#4152a8]">All Subjects</span>
+    <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#151f54] to-[#4152a8]">Available Subjects</span>
   </h1>
   <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
-    Browse our complete catalog of subjects or search for specific topics. 
+    Browse all subjects currently available with our tutors or search for specific topics. 
     Click on any subject card to find specialized tutors ready to help you excel.
   </p>
 </section>

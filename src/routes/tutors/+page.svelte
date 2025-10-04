@@ -7,11 +7,13 @@
   import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
   import { db } from '$lib/firebase';
   import type { Tutor } from '$lib/services/tutorService';
+  import { tutorService } from '$lib/services/tutorService';
   import { Modal } from '$lib/components';
   import { getEmoji } from '$lib/utils/emojiUtils';
   // NEW: session info + calendly helper & widget
   import { SessionInfoModal, CalendlyWidget } from '$lib';
   import { buildCalendlyPrefill } from '$lib/utils/calendlyHelper';
+  import { availableSubjectsStore } from '$lib/stores/availableSubjectsStore';
   
   // Initialize tutors array with loading state
   let tutors: Tutor[] = [];
@@ -289,6 +291,9 @@
           };
         });
         
+        // Ensure available subjects store is updated on initial load
+        await tutorService.refreshAvailableSubjects();
+        
         console.log(`Loaded ${tutors.length} tutors successfully.`);
         loading = false;
       } catch (err) {
@@ -430,6 +435,10 @@
         };
       });
       
+      // Update available subjects store to reflect changes in tutor data
+      await tutorService.refreshAvailableSubjects();
+      console.log('Available subjects store updated with new tutor data');
+      
       loading = false;
     } catch (err) {
       console.error("Error refreshing tutors:", err);
@@ -479,7 +488,7 @@
       const docRef = await addDoc(tutorsCollection, newTutor);
       console.log("Document written with ID:", docRef.id);
       
-      // Refresh tutors list
+      // Refresh tutors list and available subjects
       await refreshTutorsData();
       
       // Close form and reset
@@ -538,7 +547,7 @@
       await updateDoc(tutorDocRef, updatedTutor);
       console.log("Document updated with ID:", tutorId);
       
-      // Refresh tutors list
+      // Refresh tutors list and available subjects
       await refreshTutorsData();
       
       // Close form and reset
@@ -563,7 +572,7 @@
         await deleteDoc(tutorDocRef);
         console.log("Document deleted with ID:", tutorId);
         
-        // Refresh tutors list
+        // Refresh tutors list and available subjects
         await refreshTutorsData();
         
         // Close modal
@@ -836,32 +845,40 @@
       </div>
       
       <!-- Form Actions -->
-      <div class="mt-6 flex justify-end space-x-3">
-        <button
-          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          on:click={closeForm}>
-          Cancel
-        </button>
-        {#if isEditing && selectedTutor}
+      <div class="mt-6 flex flex-col space-y-3">
+        <!-- Status note about available subjects -->
+        <div class="text-sm text-gray-600 italic">
+          <p>Note: Changes to tutors will automatically update available subjects across the site.</p>
+        </div>
+        
+        <!-- Action buttons -->
+        <div class="flex justify-end space-x-3">
           <button
-            class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
-            on:click={() => {
-              if (selectedTutor && selectedTutor.id) {
-                updateTutor(selectedTutor.id);
-              } else {
-                console.error('Cannot update tutor: Invalid tutor ID');
-                alert('Error: Unable to update tutor due to missing ID.');
-              }
-            }}>
-            Update Tutor
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            on:click={closeForm}>
+            Cancel
           </button>
-        {:else}
-          <button
-            class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
-            on:click={addTutor}>
-            Add Tutor
-          </button>
-        {/if}
+          {#if isEditing && selectedTutor}
+            <button
+              class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
+              on:click={() => {
+                if (selectedTutor && selectedTutor.id) {
+                  updateTutor(selectedTutor.id);
+                } else {
+                  console.error('Cannot update tutor: Invalid tutor ID');
+                  alert('Error: Unable to update tutor due to missing ID.');
+                }
+              }}>
+              Update Tutor
+            </button>
+          {:else}
+            <button
+              class="px-4 py-2 bg-[#151f54] hover:bg-[#212d6e] text-white rounded-md shadow-sm"
+              on:click={addTutor}>
+              Add Tutor
+            </button>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}

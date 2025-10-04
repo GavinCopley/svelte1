@@ -4,6 +4,7 @@
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
+  import { availableSubjectsStore, apSubjects as availableApSubjects, regularSubjects as availableRegularSubjects } from '$lib';
 
   type Subject = { 
     key: string; 
@@ -14,32 +15,178 @@
     isAP?: boolean; // Added AP flag
   };
 
-  // Popular AP subjects
-  const apSubjects: Subject[] = [
-    { key: 'apcalc',   name: 'Calculus AB',       icon: '📊', tag: 'Limits · Derivatives · Integrals', isAP: true,
-      desc: 'Master derivatives, integrals, series, and differential equations to earn a 4-5 on the College Board exam.' },
-    { key: 'aplang',   name: 'English Language and Composition', icon: '📝', tag: 'Rhetoric · Synthesis · Analysis', isAP: true,
-      desc: 'Build rhetorical analysis skills, timed-writing strategies, and evidence-based arguments for AP success.' },
-    { key: 'apbio',    name: 'Biology',           icon: '🧬', tag: 'Cells · Evolution · Systems', isAP: true,
-      desc: 'Tackle cellular processes, genetics, evolution and ecology through data analysis and FRQ practice.' },
-    { key: 'apphys',   name: 'Physics 1: Algebra-Based', icon: '⚛️', tag: 'Mechanics · Rotation · Circuits', isAP: true,
-      desc: 'Conquer kinematics, forces, circular motion, energy, circuits, and waves with step-by-step problem approaches.' }
-  ];
+  // Subject icons and tags mapping
+  const subjectIcons: Record<string, string> = {
+    // AP Subjects
+    'AP Calculus AB': '📊',
+    'AP Calculus BC': '📈',
+    'AP Statistics': '📉',
+    'AP Computer Science': '💻',
+    'AP Computer Science A': '👨‍💻',
+    'AP Computer Science Principles': '💻',
+    'AP English Language': '📝',
+    'AP English Literature': '📚',
+    'AP English Language and Composition': '📝',
+    'AP English Literature and Composition': '📚',
+    'AP Biology': '🧬',
+    'AP Chemistry': '🧪',
+    'AP Physics': '⚛️',
+    'AP Physics 1': '⚛️',
+    'AP Physics 2': '🔭',
+    'AP Physics C': '🌌',
+    'AP Environmental Science': '🌳',
+    'AP Psychology': '🧠',
+    'AP US History': '🇺🇸',
+    'AP World History': '🌍',
+    'AP European History': '🏰',
+    'AP Human Geography': '🗺️',
+    'AP Government': '⚖️',
+    'AP Art History': '🎨',
+    'AP Music Theory': '🎵',
+    'AP Spanish': '🇪🇸',
+    'AP French': '🇫🇷',
+    
+    // Regular Subjects
+    'Algebra': '🔢',
+    '8th Grade Algebra': '🔢',
+    'Algebra 1': '➗',
+    'Algebra 2': '📊',
+    'Geometry': '📐',
+    'Trigonometry': '📏',
+    'Pre-Calculus': '📈',
+    'Calculus': '📉',
+    'Statistics': '📊',
+    'English': '✏️',
+    '8th Grade English': '✏️',
+    'Literature': '📚',
+    'Writing': '📝',
+    'Grammar': '🔤',
+    'Science': '🔬',
+    'Biology': '🧫',
+    'Chemistry': '⚗️',
+    'Physics': '🔭',
+    'Earth Science': '🌎',
+    '8th Grade Science': '🔬',
+    'History': '📜',
+    'US History': '🇺🇸',
+    'World History': '🌐',
+    'Government': '🏛️',
+    'Economics': '💰',
+    'Spanish': '🇪🇸',
+    'French': '🇫🇷',
+    'German': '🇩🇪',
+    'Latin': '🏛️',
+    'Computer Science': '💻',
+    'Programming': '👨‍💻'
+  };
 
-  // Popular non-AP subjects
-  const nonAPSubjects: Subject[] = [
-    { key: 'alg1',     name: '8th Grade Algebra', icon: '🔢', tag: 'Expressions · Equations · Graphs',
-      desc: 'Build middle school algebra foundations with linear equations, inequalities, and intro to functions.' },
-    { key: 'eng8',     name: '8th Grade English',  icon: '✏️', tag: 'Reading · Essays · Grammar',
-      desc: 'Strengthen paragraph structure, evidence use, reading comprehension, and language conventions.' },
-    { key: 'sci8',     name: '8th Grade Science',  icon: '🔬', tag: 'Physical · Life · Earth Science',
-      desc: 'Explore physical sciences, life sciences, and Earth systems with clear explanations and simple experiments.' },
-    { key: 'precalc',  name: 'Pre-Calculus',       icon: '📈', tag: 'Functions · Trig · Analysis',
-      desc: 'Prepare for calculus with function analysis, trigonometry, vectors, matrices, and sequence/series work.' }
-  ];
+  const subjectTags: Record<string, string> = {
+    // AP Subjects
+    'AP Calculus AB': 'Limits · Derivatives · Integrals',
+    'AP Calculus BC': 'Limits · Series · Integration',
+    'AP Statistics': 'Data · Probability · Inference',
+    'AP Computer Science A': 'Java · Algorithms · Objects',
+    'AP Computer Science Principles': 'Coding · Data · Systems',
+    'AP English Language and Composition': 'Rhetoric · Synthesis · Analysis',
+    'AP English Literature and Composition': 'Literature · Analysis · Composition',
+    'AP Biology': 'Cells · Evolution · Systems',
+    'AP Chemistry': 'Reactions · Equilibrium · Thermodynamics',
+    'AP Physics 1': 'Mechanics · Rotation · Circuits',
+    'AP Physics 2': 'Fluids · Thermodynamics · Optics',
+    'AP Physics C': 'Mechanics · E&M · Calculus',
+    'AP Environmental Science': 'Ecosystems · Resources · Pollution',
+    'AP Psychology': 'Behavior · Cognition · Development',
+    'AP US History': 'Periods · Themes · Analysis',
+    'AP World History': 'Civilizations · Change · Interaction',
+    
+    // Regular Subjects
+    'Algebra 1': 'Expressions · Equations · Graphs',
+    'Geometry': 'Shapes · Proofs · Measurement',
+    'Algebra 2': 'Functions · Systems · Polynomials',
+    'Trigonometry': 'Angles · Functions · Identities',
+    'Pre-Calculus': 'Functions · Trig · Analysis',
+    'Calculus': 'Derivatives · Integrals · Series',
+    'Statistics': 'Data · Probability · Inference',
+    'Biology': 'Cells · Genetics · Ecology',
+    'Chemistry': 'Matter · Reactions · Solutions',
+    'Physics': 'Forces · Energy · Waves',
+    '8th Grade Algebra': 'Expressions · Equations · Graphs',
+    '8th Grade English': 'Reading · Essays · Grammar',
+    '8th Grade Science': 'Physical · Life · Earth Science'
+  };
 
+  // Subject descriptions
+  const subjectDescriptions: Record<string, string> = {
+    // AP Subjects
+    'AP Calculus AB': 'Master derivatives, integrals, series, and differential equations to earn a 4-5 on the College Board exam.',
+    'AP Calculus BC': 'Tackle advanced integration techniques, polar coordinates, vectors, and series for top AP scores.',
+    'AP Statistics': 'Learn to analyze data, design studies, and make statistical inferences for the AP exam.',
+    'AP Computer Science A': 'Master Java programming, algorithms, and object-oriented design for the AP CS A exam.',
+    'AP Computer Science Principles': 'Explore computing concepts, programming fundamentals, and computational thinking.',
+    'AP English Language and Composition': 'Build rhetorical analysis skills, timed-writing strategies, and evidence-based arguments for AP success.',
+    'AP English Literature and Composition': 'Analyze literary works, develop critical thinking skills, and write sophisticated essays.',
+    'AP Biology': 'Tackle cellular processes, genetics, evolution and ecology through data analysis and FRQ practice.',
+    'AP Chemistry': 'Master chemical principles, equilibrium, thermodynamics, and lab analysis for the AP exam.',
+    'AP Physics 1': 'Conquer kinematics, forces, circular motion, energy, circuits, and waves with step-by-step problem approaches.',
+    'AP Physics 2': 'Build on Physics 1 with fluids, thermodynamics, electricity, magnetism, optics, and quantum physics.',
+    'AP Environmental Science': 'Study ecosystems, resources, energy, pollution, and policy solutions for environmental challenges.',
+    
+    // Regular Subjects
+    'Algebra 1': 'Master linear equations, inequalities, functions, and problem-solving strategies.',
+    'Geometry': 'Learn about shapes, proofs, transformations, and spatial relationships.',
+    'Algebra 2': 'Explore advanced functions, systems of equations, and algebraic concepts.',
+    'Trigonometry': 'Study angle relationships, trigonometric functions, identities, and applications.',
+    'Pre-Calculus': 'Prepare for calculus with function analysis, trigonometry, vectors, matrices, and sequence/series work.',
+    'Calculus': 'Understand limits, derivatives, integrals, and their applications to real-world problems.',
+    'Statistics': 'Analyze data, probability distributions, hypothesis testing, and statistical inference.',
+    'Biology': 'Explore living systems from cellular structures to ecosystems and evolutionary processes.',
+    'Chemistry': 'Study matter, atomic structure, chemical reactions, and laboratory techniques.',
+    'Physics': 'Investigate forces, motion, energy, waves, electricity, and magnetism with practical applications.',
+    '8th Grade Algebra': 'Build middle school algebra foundations with linear equations, inequalities, and intro to functions.',
+    '8th Grade English': 'Strengthen paragraph structure, evidence use, reading comprehension, and language conventions.',
+    '8th Grade Science': 'Explore physical sciences, life sciences, and Earth systems with clear explanations and simple experiments.'
+  };
+  
+  // Dynamically created subject lists
+  let dynamicApSubjects: Subject[] = [];
+  let dynamicNonAPSubjects: Subject[] = [];
+  
+  // Process the available subjects from the store
+  $: {
+    const processSubject = (subjectName: string, isAP: boolean): Subject => {
+      // Generate a key from the name
+      const key = subjectName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      // Default icon, tag and description
+      let icon = isAP ? '📚' : '📖';
+      let tag = isAP ? 'Advanced Placement' : 'Core Subject';
+      let desc = isAP ? 
+        `College Board-aligned content for ${subjectName}` : 
+        `Comprehensive coverage of ${subjectName} curriculum`;
+      
+      // Try to get specific icon, tag and description if available
+      if (subjectIcons[subjectName]) icon = subjectIcons[subjectName];
+      if (subjectTags[subjectName]) tag = subjectTags[subjectName];
+      if (subjectDescriptions[subjectName]) desc = subjectDescriptions[subjectName];
+      
+      return { key, name: subjectName.replace(/^AP\s+/, ''), icon, tag, desc, isAP };
+    };
+    
+    // Process AP subjects (take first 4 or all if less)
+    dynamicApSubjects = $availableApSubjects
+      .slice(0, 4)
+      .map(subject => processSubject(subject.name, true));
+    
+    // Process regular subjects (take first 4 or all if less)
+    dynamicNonAPSubjects = $availableRegularSubjects
+      .slice(0, 4)
+      .map(subject => processSubject(subject.name, false));
+  }
+  
   // Combine all subjects for any code that needs the full list
-  const subjects: Subject[] = [...apSubjects, ...nonAPSubjects];
+  $: subjects = [...dynamicApSubjects, ...dynamicNonAPSubjects];
+  $: apSubjects = dynamicApSubjects;
+  $: nonAPSubjects = dynamicNonAPSubjects;
 
   const tierData = {
     ap:  {
@@ -401,64 +548,70 @@
     <h2 class="text-2xl font-bold text-[#151f54] mb-4 flex items-center">
       <span class="chip chip-ap mr-2">AP</span> Popular College Board AP Courses
     </h2>
-    <div bind:this={gridRef} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {#each apSubjects as s, i}
-        <div
-          class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
-                 transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
-                 bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 flex flex-col"
-          style="
-            animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
-            animation-delay: {70*i}ms;
-            background-image:
-              radial-gradient(1200px 300px at 0% 0%, rgba(59, 130, 246, .15), transparent 40%),
-              linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
-          "
-        >
-          <!-- AP gradient border frame -->
-          <span class="absolute inset-0 rounded-2xl p-[1.5px] pointer-events-none"
-                style="background: linear-gradient(135deg, #93c5fd, #bfdbfe, #dbeafe); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></span>
+    {#if apSubjects.length > 0}
+      <div bind:this={gridRef} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {#each apSubjects as s, i}
+          <div
+            class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
+                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
+                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
+                  flex flex-col"
+            style="
+              animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
+              animation-delay: {70*i}ms;
+              background-image:
+                radial-gradient(1200px 300px at 0% 0%, rgba(59, 130, 246, .15), transparent 40%),
+                linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
+            "
+          >
+            <!-- AP gradient border frame -->
+            <span class="absolute inset-0 rounded-2xl p-[1.5px] pointer-events-none"
+                  style="background: linear-gradient(135deg, #93c5fd, #bfdbfe, #dbeafe); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></span>
 
-          <div class="flex items-start justify-between">
-            <div class="text-3xl mb-3 mr-3 transition-transform group-hover:scale-110">{s.icon}</div>
-            <span class="text-xs font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 opacity-90">
-              {s.tag}
-            </span>
+            <div class="flex items-start justify-between">
+              <div class="text-3xl mb-3 mr-3 transition-transform group-hover:scale-110">{s.icon}</div>
+              <span class="text-xs font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 opacity-90">
+                {s.tag}
+              </span>
+            </div>
+
+            <button
+              class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
+              on:click={(e) => {
+                openFor(s, e.currentTarget as HTMLElement);
+                // Prevent focus from lingering on this element
+                e.currentTarget.blur();
+              }}
+              on:mousedown={(e) => e.preventDefault()}
+              aria-label={`Choose ${s.name}`}
+            >
+              <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
+
+              <!-- specific description -->
+              <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
+                {s.desc}
+              </p>
+            </button>
+            
+            <!-- Find a Tutor button -->
+            <button 
+              class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
+              on:click={(e) => {
+                e.stopPropagation();
+                openFor(s, e.currentTarget as HTMLElement);
+              }}
+              aria-label={`Find a tutor for ${s.name}`}
+            >
+              Find a Tutor
+            </button>
           </div>
-
-          <button
-            class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
-            on:click={(e) => {
-              openFor(s, e.currentTarget as HTMLElement);
-              // Prevent focus from lingering on this element
-              e.currentTarget.blur();
-            }}
-            on:mousedown={(e) => e.preventDefault()}
-            aria-label={`Choose ${s.name}`}
-          >
-            <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
-
-            <!-- specific description -->
-            <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
-              {s.desc}
-            </p>
-          </button>
-          
-          <!-- Find a Tutor button -->
-          <button 
-            class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
-            on:click={(e) => {
-              e.stopPropagation();
-              openFor(s, e.currentTarget as HTMLElement);
-            }}
-            aria-label={`Find a tutor for ${s.name}`}
-          >
-            Find a Tutor
-          </button>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="text-center py-8 bg-white/80 rounded-xl shadow-sm border border-gray-100">
+        <p class="text-gray-600">No AP subjects with available tutors found. Please check back later.</p>
+      </div>
+    {/if}
   </div>
 
   <!-- Regular (Non-AP) Subjects Section -->
@@ -466,64 +619,70 @@
     <h2 class="text-2xl font-bold text-[#151f54] mb-4 flex items-center">
       <span class="chip chip-reg mr-2">Regular</span> Popular Grade-Level Courses
     </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {#each nonAPSubjects as s, i}
-        <div
-          class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
-                 transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
-                 bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
-                 flex flex-col"
-          style="
-            animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
-            animation-delay: {70*(i+4)}ms;
-            background-image:
-              radial-gradient(1200px 300px at 0% 0%, rgba(16, 185, 129, .12), transparent 40%),
-              linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
-          "
-        >
-          <!-- Regular gradient border frame -->
-          <span class="absolute inset-0 rounded-2xl p-[1.5px] pointer-events-none"
-                style="background: linear-gradient(135deg, #6ee7b7, #a7f3d0, #d1fae5); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></span>
+    {#if nonAPSubjects.length > 0}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {#each nonAPSubjects as s, i}
+          <div
+            class="group relative overflow-hidden rounded-2xl p-6 text-left shadow-[0_10px_30px_rgba(16,24,40,.08)]
+                  transition-colors focus-within:outline-none focus-within:ring-4 focus-within:ring-indigo-200
+                  bg-white/90 border border-transparent hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(16,24,40,.14)]
+                  flex flex-col"
+            style="
+              animation: cardIn .5s cubic-bezier(.14,.75,.29,1.02) both;
+              animation-delay: {70*(i+4)}ms;
+              background-image:
+                radial-gradient(1200px 300px at 0% 0%, rgba(16, 185, 129, .12), transparent 40%),
+                linear-gradient(0deg, rgba(255,255,255,.9), rgba(255,255,255,.9));
+            "
+          >
+            <!-- Regular gradient border frame -->
+            <span class="absolute inset-0 rounded-2xl p-[1.5px] pointer-events-none"
+                  style="background: linear-gradient(135deg, #6ee7b7, #a7f3d0, #d1fae5); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></span>
 
-          <div class="flex items-start justify-between">
-            <div class="text-3xl mb-3 mr-3 transition-transform group-hover:scale-110">{s.icon}</div>
-            <span class="text-xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 opacity-90">
-              {s.tag}
-            </span>
+            <div class="flex items-start justify-between">
+              <div class="text-3xl mb-3 mr-3 transition-transform group-hover:scale-110">{s.icon}</div>
+              <span class="text-xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 opacity-90">
+                {s.tag}
+              </span>
+            </div>
+
+            <button
+              class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
+              on:click={(e) => {
+                openFor(s, e.currentTarget as HTMLElement);
+                // Prevent focus from lingering on this element
+                e.currentTarget.blur();
+              }}
+              on:mousedown={(e) => e.preventDefault()}
+              aria-label={`Choose ${s.name}`}
+            >
+              <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
+
+              <!-- specific description -->
+              <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
+                {s.desc}
+              </p>
+            </button>
+            
+            <!-- Find a Tutor button -->
+            <button 
+              class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
+              on:click={(e) => {
+                e.stopPropagation();
+                openFor(s, e.currentTarget as HTMLElement);
+              }}
+              aria-label={`Find a tutor for ${s.name}`}
+            >
+              Find a Tutor
+            </button>
           </div>
-
-          <button
-            class="w-full text-left focus:outline-none flex flex-col no-focus-highlight"
-            on:click={(e) => {
-              openFor(s, e.currentTarget as HTMLElement);
-              // Prevent focus from lingering on this element
-              e.currentTarget.blur();
-            }}
-            on:mousedown={(e) => e.preventDefault()}
-            aria-label={`Choose ${s.name}`}
-          >
-            <h3 class="text-lg font-semibold text-[#151f54] min-h-[56px] flex items-center">{s.name}</h3>
-
-            <!-- specific description -->
-            <p class="text-gray-600 text-sm leading-relaxed mt-3 h-[90px] overflow-hidden">
-              {s.desc}
-            </p>
-          </button>
-          
-          <!-- Find a Tutor button -->
-          <button 
-            class="mt-auto w-full py-2 px-4 bg-blue-100 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-200 transition-colors"
-            on:click={(e) => {
-              e.stopPropagation();
-              openFor(s, e.currentTarget as HTMLElement);
-            }}
-            aria-label={`Find a tutor for ${s.name}`}
-          >
-            Find a Tutor
-          </button>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="text-center py-8 bg-white/80 rounded-xl shadow-sm border border-gray-100">
+        <p class="text-gray-600">No regular subjects with available tutors found. Please check back later.</p>
+      </div>
+    {/if}
   </div>
 
   <!-- MORE SUBJECTS BUTTON -->

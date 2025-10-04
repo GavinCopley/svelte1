@@ -3,3 +3,4 @@ export * from './utils/emojiUtils';
 export { default as CalendlyWidget } from './components/CalendlyWidget.svelte';
 export { default as SessionInfoModal } from './components/SessionInfoModal.svelte';
 export * as calendlyHelper from './utils/calendlyHelper';
+export * from './stores/availableSubjectsStore';

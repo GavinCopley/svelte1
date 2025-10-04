@@ -1,4 +1,6 @@
 import { firestoreDB } from '$lib/firebaseClient';
+import { availableSubjectsStore } from '$lib/stores/availableSubjectsStore';
+import { categorizeSubject } from '$lib/stores/availableSubjectsStore';
 
 // Define TypeScript interfaces for our data structures
 export interface Tutor {
@@ -23,18 +25,21 @@ export const tutorService = {
       console.log(`Retrieved ${tutors.length} tutors successfully`);
       
       // Normalize and validate tutor data
-      return tutors.map(tutor => ({
+      const normalizedTutors = tutors.map(tutor => ({
         id: tutor.id,
         name: tutor.name || 'Unknown',
-        subjects: Array.isArray(tutor.subjects) ? 
-          tutor.subjects.filter(s => typeof s === 'string') : 
-          (typeof tutor.subjects === 'string' ? [tutor.subjects] : []),
+        subjects: normalizeSubjectsList(tutor.subjects),
         education: tutor.education || '',
         experience: tutor.experience || '',
         bio: tutor.bio || '',
         image: tutor.image || '',
         calendlyLink: tutor.calendlyLink || ''
       }));
+
+      // Update the available subjects store while we have all the tutor data
+      updateAvailableSubjectsStore(normalizedTutors);
+      
+      return normalizedTutors;
     } catch (error) {
       console.error('Error in tutorService.getAllTutors:', error);
       // Provide empty array as fallback
@@ -75,5 +80,100 @@ export const tutorService = {
   // Delete tutor
   deleteTutor: async (id: string): Promise<void> => {
     await firestoreDB.deleteDocument(COLLECTION_NAME, id);
+  },
+
+  // Get all available subjects (subjects that have at least one tutor)
+  getAvailableSubjects: async () => {
+    try {
+      const tutors = await tutorService.getAllTutors();
+      return extractAvailableSubjects(tutors);
+    } catch (error) {
+      console.error('Error getting available subjects:', error);
+      return [];
+    }
+  },
+  
+  // Refresh the available subjects store
+  refreshAvailableSubjects: async () => {
+    try {
+      const tutors = await tutorService.getAllTutors();
+      updateAvailableSubjectsStore(tutors);
+    } catch (error) {
+      console.error('Error refreshing available subjects:', error);
+    }
   }
 };
+
+// Helper function to extract available subjects from tutors
+function extractAvailableSubjects(tutors: Tutor[]) {
+  const subjectMap = new Map<string, { count: number, category: string, isAP: boolean }>();
+  
+  // Count tutors for each subject and categorize them
+  tutors.forEach(tutor => {
+    // Normalize subjects to ensure consistency
+    const normalizedSubjects = normalizeSubjectsList(tutor.subjects);
+    
+    normalizedSubjects.forEach(subject => {
+      const normalizedSubject = subject.trim();
+      if (normalizedSubject) {
+        const isAP = normalizedSubject.toLowerCase().startsWith('ap ');
+        const category = categorizeSubject(normalizedSubject);
+        
+        // Update subject count in the map
+        if (subjectMap.has(normalizedSubject)) {
+          const existingData = subjectMap.get(normalizedSubject)!;
+          existingData.count++;
+        } else {
+          subjectMap.set(normalizedSubject, { count: 1, category, isAP });
+        }
+      }
+    });
+  });
+  
+  // Convert the map to an array of subjects
+  return Array.from(subjectMap.entries()).map(([name, data]) => ({
+    name,
+    category: data.category,
+    tutorCount: data.count,
+    isAP: data.isAP
+  }));
+}
+
+// Helper function to normalize a list of subjects to ensure consistency
+function normalizeSubjectsList(subjects: any): string[] {
+  if (!subjects) {
+    return [];
+  }
+  
+  if (Array.isArray(subjects)) {
+    // Filter out non-string values and trim strings
+    return subjects
+      .filter(s => typeof s === 'string')
+      .map(s => s.trim())
+      .filter(Boolean);
+  } 
+  
+  if (typeof subjects === 'string') {
+    // Split comma-separated string and trim each item
+    return subjects
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  
+  if (typeof subjects === 'object') {
+    // Handle object case (sometimes Firebase returns strange formats)
+    return Object.values(subjects)
+      .filter(s => typeof s === 'string')
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  
+  return [];
+}
+
+// Update the available subjects store
+function updateAvailableSubjectsStore(tutors: Tutor[]) {
+  const availableSubjects = extractAvailableSubjects(tutors);
+  availableSubjectsStore.set(availableSubjects);
+}
