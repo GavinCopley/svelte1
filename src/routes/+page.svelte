@@ -3,13 +3,21 @@
   import { Button } from "$lib/components/ui/button";
   import { fade } from 'svelte/transition';
   import Fuse from 'fuse.js';
+  import { availableSubjectsStore, type AvailableSubject } from '$lib/stores/availableSubjectsStore';
+  import { tutorService } from '$lib/services/tutorService';
 
   let visible = false;
   let showInitialContent = true;
   let showNewContent = false;
   let searchQuery = '';
-  let searchResults: {subject: string, category: string}[] = [];
+  let searchResults: {subject: string, category: string, available: boolean}[] = [];
   let showResults = false;
+  let availableSubjects: AvailableSubject[] = [];
+  
+  // Subscribe to availableSubjectsStore
+  const unsubscribe = availableSubjectsStore.subscribe(subjects => {
+    availableSubjects = subjects;
+  });
   
   // Subject categories - copied from tutors page to have access to all subjects
   const subjectCategories = [
@@ -98,21 +106,29 @@
     }
   ];
   
-  // Extract all subjects and create a searchable array with category information
-  const allSubjects = subjectCategories.flatMap(category => 
-    category.subjects.map(subject => ({
-      subject: subject,
-      category: category.name
-    }))
+  // Extract all subjects and create a searchable array with category and availability information
+  $: allSubjects = subjectCategories.flatMap(category => 
+    category.subjects.map(subject => {
+      // Check if this subject is available (has tutors)
+      const isAvailable = availableSubjects.some(availableSubject => 
+        availableSubject.name.toLowerCase() === subject.toLowerCase()
+      );
+      
+      return {
+        subject: subject,
+        category: category.name,
+        available: isAvailable
+      };
+    })
   );
   
   // Initialize Fuse.js for fuzzy searching
-  const fuseOptions = {
+  $: fuseOptions = {
     keys: ['subject', 'category'],
     threshold: 0.3, // Lower threshold means more strict matching
     includeScore: true
   };
-  const fuse = new Fuse(allSubjects, fuseOptions);
+  $: fuse = new Fuse(allSubjects, fuseOptions);
   
   // Function to perform search
   function performSearch() {
@@ -136,16 +152,34 @@
         exact.subject.toLowerCase() === item.subject.toLowerCase()
       ));
     
-    // Combine exact matches first, then fuzzy matches
-    searchResults = [...exactMatches, ...fuzzyMatches];
+    // Combine results, but prioritize available subjects
+    const combinedResults = [...exactMatches, ...fuzzyMatches];
+    
+    // Sort results to prioritize available subjects first
+    searchResults = combinedResults.sort((a, b) => {
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      return 0;
+    });
+    
     showResults = true;
   }
   
   // Handle subject selection
   function selectSubject(subject: string) {
-    // Navigate to tutorfilter page with the selected subject as a parameter
-    // Use exact=true to prevent tutorfilter from trying to find partial matches
-    window.location.href = `/tutorfilter?subject=${encodeURIComponent(subject)}&exact=true`;
+    // First check if subject is available
+    const isAvailable = availableSubjects.some(availableSubject => 
+      availableSubject.name.toLowerCase() === subject.toLowerCase()
+    );
+    
+    if (isAvailable) {
+      // Navigate to tutorfilter page with the selected subject as a parameter
+      // Use exact=true to prevent tutorfilter from trying to find partial matches
+      window.location.href = `/tutorfilter?subject=${encodeURIComponent(subject)}&exact=true`;
+    } else {
+      // This shouldn't happen with the updated UI, but just in case
+      console.log(`Subject ${subject} is not currently available`);
+    }
   }
 
   function handleGetStarted() {
@@ -166,12 +200,18 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     visible = true;
     document.addEventListener('click', handleClickOutside);
     
+    // Make sure available subjects are loaded
+    if (availableSubjects.length === 0) {
+      await tutorService.refreshAvailableSubjects();
+    }
+    
     return () => {
       document.removeEventListener('click', handleClickOutside);
+      unsubscribe();
     };
   });
 </script>
@@ -256,15 +296,29 @@
           <div class="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto" transition:fade={{ duration: 200 }}>
             <ul class="py-2 divide-y divide-gray-100">
               {#each searchResults as result, i}
-                <li 
-                  class="px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors flex flex-col items-start text-left"
-                  on:click={() => selectSubject(result.subject)}
-                >
-                  <div class="flex items-center">
-                    <span class="font-medium text-[#151f54]">{result.subject}</span>
-                  </div>
-                  <span class="text-xs text-gray-500">{result.category}</span>
-                </li>
+                {#if result.available}
+                  <!-- Available subject: clickable and styled normally -->
+                  <li 
+                    class="px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors flex flex-col items-start text-left"
+                    on:click={() => selectSubject(result.subject)}
+                  >
+                    <div class="flex items-center">
+                      <span class="font-medium text-[#151f54]">{result.subject}</span>
+                      <span class="ml-2 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Available</span>
+                    </div>
+                    <span class="text-xs text-gray-500">{result.category}</span>
+                  </li>
+                {:else}
+                  <!-- Unavailable subject: not clickable and shows message -->
+                  <li class="px-4 py-2 flex flex-col items-start text-left bg-gray-50">
+                    <div class="flex items-center">
+                      <span class="font-medium text-gray-500">{result.subject}</span>
+                    </div>
+                    <div class="mt-1 text-xs text-amber-600">
+                      Looking for {result.subject}? Subject not currently available.
+                    </div>
+                  </li>
+                {/if}
               {/each}
             </ul>
           </div>
@@ -289,9 +343,9 @@
       
       <!-- Centered button linking to subjects page -->
       <div class="flex flex-col items-center mt-4">
-        <p class="text-gray-600 mb-3">Can't find what you're looking for? Browse all our subjects</p>
-        <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" href="/subjects?tutorial=true">
-          Explore All Subjects
+        <p class="text-gray-600 mb-3">Can't find what you're looking for? Browse all available subjects</p>
+        <Button variant="default" size="lg" class="px-10 h-14 text-lg font-medium" href="/subjects">
+          Explore Available Subjects
         </Button>
       </div>
     </div>
